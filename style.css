@@ -155,6 +155,10 @@ button:active {
   touch-action: none;
 }
 
+body.has-touch .touch-controls {
+  display: grid;
+}
+
 .player-picker {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -190,12 +194,6 @@ button:active {
   text-transform: uppercase;
 }
 
-.touch-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-}
-
 .touch-btn {
   min-height: 62px;
   padding: 0;
@@ -208,9 +206,53 @@ button:active {
   -webkit-tap-highlight-color: transparent;
 }
 
+.mobile-gamepad {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(112px, 0.72fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.direction-pad {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 58px 1fr;
+  align-items: center;
+  min-height: 118px;
+  padding: 14px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(58, 70, 88, 0.95), rgba(16, 21, 30, 0.96));
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 8px 20px rgba(255, 255, 255, 0.08), 0 14px 30px rgba(0, 0, 0, 0.28);
+}
+
+.dpad-center {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #101722, #05070a);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.04);
+}
+
+.touch-btn.dir {
+  min-height: 78px;
+  border-radius: 50%;
+  font-size: 1.75rem;
+}
+
 .touch-btn.jump {
   background: linear-gradient(180deg, #7bd88f, #1d9a59);
   color: #07160d;
+}
+
+.action-jump {
+  min-height: 112px;
+  border-radius: 50%;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
 }
 
 .touch-btn.is-pressed {
@@ -252,6 +294,12 @@ button:active {
   }
 }
 
+@media (hover: none), (pointer: coarse) {
+  .touch-controls {
+    display: grid;
+  }
+}
+
 @media (max-width: 520px) {
   body {
     place-items: start center;
@@ -280,5 +328,14 @@ button:active {
 
   .touch-btn {
     min-height: 58px;
+  }
+
+  .mobile-gamepad {
+    grid-template-columns: 1fr;
+  }
+
+  .action-jump {
+    min-height: 76px;
+    border-radius: 10px;
   }
 }

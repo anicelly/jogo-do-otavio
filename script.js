@@ -24,6 +24,10 @@ const particulas = [];
 const botaoSom = document.getElementById("botaoSom");
 const activePlayerLabel = document.getElementById("activePlayerLabel");
 
+if (navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches) {
+  document.body.classList.add("has-touch");
+}
+
 const controlesMobile = {
   joao: { left: "a", jump: "w", right: "d" },
   luquinhas: { left: "ArrowLeft", jump: "ArrowUp", right: "ArrowRight" }
@@ -437,11 +441,15 @@ function tocarMusica() {
   musicaTimer--;
   if (musicaTimer > 0) return;
 
-  const melodia = [330, 392, 494, 392, 440, 523, 440, 392, 294, 349, 440, 349, 392, 494, 587, 494];
-  const baixo = [98, 98, 147, 147, 110, 110, 165, 165];
-  tocarTom(melodia[notaMusica % melodia.length], 0.13, "square", 0.026);
+  const melodia = [392, 392, 523, 659, 587, 523, 440, 523, 349, 349, 440, 587, 523, 440, 392, 330];
+  const harmonia = [196, 247, 262, 247, 220, 262, 294, 247];
+  const baixo = [98, 147, 131, 147, 110, 165, 147, 123];
+  tocarTom(melodia[notaMusica % melodia.length], 0.12, "square", 0.032);
+  if (notaMusica % 2 === 1) {
+    tocarTom(harmonia[Math.floor(notaMusica / 2) % harmonia.length], 0.11, "triangle", 0.014);
+  }
   if (notaMusica % 2 === 0) {
-    tocarTom(baixo[Math.floor(notaMusica / 2) % baixo.length], 0.16, "triangle", 0.018);
+    tocarTom(baixo[Math.floor(notaMusica / 2) % baixo.length], 0.16, "triangle", 0.021);
   }
   notaMusica++;
   musicaTimer = 18;

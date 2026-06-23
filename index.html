@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Joao & Luquinhas - Reino Pixel</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <main class="app">
@@ -40,15 +40,19 @@
 
       <div class="touch-pad">
         <span id="activePlayerLabel">Controlando Joao</span>
-        <div class="touch-row">
-          <button type="button" class="touch-btn" data-action="left" aria-label="Esquerda">◀</button>
-          <button type="button" class="touch-btn jump" data-action="jump" aria-label="Pular">▲</button>
-          <button type="button" class="touch-btn" data-action="right" aria-label="Direita">▶</button>
+        <div class="mobile-gamepad">
+          <div class="direction-pad" aria-label="Direcional">
+            <button type="button" class="touch-btn dir left" data-action="left" aria-label="Esquerda">◀</button>
+            <div class="dpad-center" aria-hidden="true"></div>
+            <button type="button" class="touch-btn dir right" data-action="right" aria-label="Direita">▶</button>
+          </div>
+
+          <button type="button" class="touch-btn jump action-jump" data-action="jump" aria-label="Pular">PULAR</button>
         </div>
       </div>
     </section>
   </main>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>
