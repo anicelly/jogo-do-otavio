@@ -17,6 +17,7 @@
       <div class="controls" aria-label="Controles">
         <span><strong>Joao</strong> A/D/W</span>
         <span><strong>Luquinhas</strong> Setas</span>
+        <span><strong>Celular</strong> botoes na tela</span>
       </div>
     </section>
 
@@ -27,6 +28,22 @@
         <div class="actions">
           <button type="button" onclick="alternarSom()" id="botaoSom">Som: ligado</button>
           <button type="button" onclick="reiniciarJogo()">Reiniciar</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="touch-controls" aria-label="Controles para celular">
+      <div class="player-picker" aria-label="Escolher jogador">
+        <button type="button" class="player-choice is-selected" data-player="joao">Joao</button>
+        <button type="button" class="player-choice" data-player="luquinhas">Luquinhas</button>
+      </div>
+
+      <div class="touch-pad">
+        <span id="activePlayerLabel">Controlando Joao</span>
+        <div class="touch-row">
+          <button type="button" class="touch-btn" data-action="left" aria-label="Esquerda">◀</button>
+          <button type="button" class="touch-btn jump" data-action="jump" aria-label="Pular">▲</button>
+          <button type="button" class="touch-btn" data-action="right" aria-label="Direita">▶</button>
         </div>
       </div>
     </section>

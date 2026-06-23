@@ -19,8 +19,15 @@ let somLigado = true;
 let audioCtx = null;
 let musicaTimer = 0;
 let notaMusica = 0;
+let jogadorMobile = "joao";
 const particulas = [];
 const botaoSom = document.getElementById("botaoSom");
+const activePlayerLabel = document.getElementById("activePlayerLabel");
+
+const controlesMobile = {
+  joao: { left: "a", jump: "w", right: "d" },
+  luquinhas: { left: "ArrowLeft", jump: "ArrowUp", right: "ArrowRight" }
+};
 
 document.addEventListener("keydown", event => {
   iniciarAudio();
@@ -40,6 +47,56 @@ document.addEventListener("keyup", event => {
 });
 
 document.addEventListener("pointerdown", iniciarAudio, { once: false });
+
+function soltarControlesMobile() {
+  Object.values(controlesMobile).forEach(controles => {
+    Object.values(controles).forEach(key => {
+      keys[key] = false;
+      if (key.length === 1) keys[key.toLowerCase()] = false;
+    });
+  });
+  document.querySelectorAll(".touch-btn").forEach(botao => botao.classList.remove("is-pressed"));
+}
+
+document.querySelectorAll(".player-choice").forEach(botao => {
+  botao.addEventListener("click", () => {
+    soltarControlesMobile();
+    jogadorMobile = botao.dataset.player;
+    document.querySelectorAll(".player-choice").forEach(b => b.classList.toggle("is-selected", b === botao));
+    if (activePlayerLabel) {
+      activePlayerLabel.innerText = jogadorMobile === "joao" ? "Controlando Joao" : "Controlando Luquinhas";
+    }
+  });
+});
+
+document.querySelectorAll(".touch-btn").forEach(botao => {
+  const action = botao.dataset.action;
+
+  const obterKey = () => controlesMobile[jogadorMobile][action];
+
+  const pressionar = event => {
+    event.preventDefault();
+    iniciarAudio();
+    jogoIniciado = true;
+    const key = obterKey();
+    keys[key] = true;
+    if (key.length === 1) keys[key.toLowerCase()] = true;
+    botao.classList.add("is-pressed");
+  };
+
+  const soltar = event => {
+    event.preventDefault();
+    const key = obterKey();
+    keys[key] = false;
+    if (key.length === 1) keys[key.toLowerCase()] = false;
+    botao.classList.remove("is-pressed");
+  };
+
+  botao.addEventListener("pointerdown", pressionar);
+  botao.addEventListener("pointerup", soltar);
+  botao.addEventListener("pointerleave", soltar);
+  botao.addEventListener("pointercancel", soltar);
+});
 
 const joao = criarJogador("Joao", 52, "#e63946", "#1d3557", "#3b1f0f");
 const luquinhas = criarJogador("Luquinhas", 112, "#457bff", "#191919", "#111111");
@@ -382,9 +439,9 @@ function tocarMusica() {
 
   const melodia = [330, 392, 494, 392, 440, 523, 440, 392, 294, 349, 440, 349, 392, 494, 587, 494];
   const baixo = [98, 98, 147, 147, 110, 110, 165, 165];
-  tocarTom(melodia[notaMusica % melodia.length], 0.13, "square", 0.014);
+  tocarTom(melodia[notaMusica % melodia.length], 0.13, "square", 0.026);
   if (notaMusica % 2 === 0) {
-    tocarTom(baixo[Math.floor(notaMusica / 2) % baixo.length], 0.16, "triangle", 0.01);
+    tocarTom(baixo[Math.floor(notaMusica / 2) % baixo.length], 0.16, "triangle", 0.018);
   }
   notaMusica++;
   musicaTimer = 18;
@@ -1353,7 +1410,7 @@ function telaInicio() {
   desenharPainelCentral("REINO PIXEL", [
     "Joao e Luquinhas contra os viloes de armadura",
     "Monte no Yoshi, coma cogumelos e pise nos inimigos",
-    "Pressione ENTER ou ESPACO para comecar"
+    "Pressione ENTER, ESPACO ou toque nos botoes"
   ]);
 }
 
