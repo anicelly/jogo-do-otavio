@@ -3,26 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Joao & Luquinhas - Reino Pixel</title>
-  <link rel="stylesheet" href="style.css?v=4">
+  <title>Reino Pixel Extremo</title>
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <main class="app">
     <section class="topbar" aria-label="Painel do jogo">
       <div>
         <span class="kicker">Aventura 8-bits</span>
-        <h1>Joao & Luquinhas</h1>
+        <h1>Reino Pixel Extremo</h1>
       </div>
 
       <div class="controls" aria-label="Controles">
-        <span><strong>Joao</strong> A/D/W</span>
-        <span><strong>Luquinhas</strong> Setas</span>
-        <span><strong>Celular</strong> botoes na tela</span>
+        <span><strong>Teclado</strong> A/D/W ou setas</span>
+        <span><strong>Celular</strong> escolha personagem e jogue</span>
       </div>
     </section>
 
     <section class="stage">
-      <canvas id="game" width="960" height="540" aria-label="Jogo Joao e Luquinhas"></canvas>
+      <canvas id="game" width="960" height="540" aria-label="Jogo Reino Pixel Extremo"></canvas>
       <div class="status">
         <strong id="mensagem">Fase 1</strong>
         <div class="actions">
@@ -33,18 +32,23 @@
     </section>
 
     <section class="touch-controls" aria-label="Controles para celular">
-      <div class="player-picker" aria-label="Escolher jogador">
-        <button type="button" class="player-choice is-selected" data-player="joao">Joao</button>
-        <button type="button" class="player-choice" data-player="luquinhas">Luquinhas</button>
+      <div class="player-picker" aria-label="Escolher personagem">
+        <button type="button" class="player-choice is-selected" data-character="joao">Joao</button>
+        <button type="button" class="player-choice" data-character="luquinhas">Luquinhas</button>
+        <button type="button" class="player-choice" data-character="cr7">CR7</button>
+        <button type="button" class="player-choice" data-character="yoshi">Yoshi</button>
+        <button type="button" class="player-choice" data-character="messi">Messi</button>
+        <button type="button" class="player-choice" data-character="lobo">Lobo</button>
+        <button type="button" class="player-choice" data-character="miaw">Miaw</button>
       </div>
 
       <div class="touch-pad">
-        <span id="activePlayerLabel">Controlando Joao</span>
+        <span id="activePlayerLabel">Personagem: Joao</span>
         <div class="mobile-gamepad">
           <div class="direction-pad" aria-label="Direcional">
-            <button type="button" class="touch-btn dir left" data-action="left" aria-label="Esquerda">◀</button>
+            <button type="button" class="touch-btn dir left" data-action="left" aria-label="Esquerda">&larr;</button>
             <div class="dpad-center" aria-hidden="true"></div>
-            <button type="button" class="touch-btn dir right" data-action="right" aria-label="Direita">▶</button>
+            <button type="button" class="touch-btn dir right" data-action="right" aria-label="Direita">&rarr;</button>
           </div>
 
           <button type="button" class="touch-btn jump action-jump" data-action="jump" aria-label="Pular">PULAR</button>
@@ -53,6 +57,6 @@
     </section>
   </main>
 
-  <script src="script.js?v=4"></script>
+  <script src="script.js?v=5"></script>
 </body>
 </html>
