@@ -23,10 +23,32 @@ let personagemAtual = "joao";
 const particulas = [];
 const botaoSom = document.getElementById("botaoSom");
 const activePlayerLabel = document.getElementById("activePlayerLabel");
+const deviceMode = document.getElementById("deviceMode");
 
-if (navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches) {
-  document.body.classList.add("has-touch");
+function detectarDispositivo() {
+  const largura = Math.min(window.innerWidth, window.screen.width || window.innerWidth);
+  const toque = navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
+
+  if (toque && largura <= 767) return "mobile";
+  if (toque && largura <= 1180) return "tablet";
+  return "desktop";
 }
+
+function aplicarModoDispositivo() {
+  const modo = detectarDispositivo();
+  document.body.classList.toggle("has-touch", modo !== "desktop");
+  document.body.classList.toggle("device-mobile", modo === "mobile");
+  document.body.classList.toggle("device-tablet", modo === "tablet");
+  document.body.classList.toggle("device-desktop", modo === "desktop");
+
+  if (deviceMode) {
+    const nome = modo === "mobile" ? "Celular" : modo === "tablet" ? "Tablet" : "Desktop";
+    deviceMode.innerHTML = "<strong>Modo</strong> " + nome;
+  }
+}
+
+aplicarModoDispositivo();
+window.addEventListener("resize", aplicarModoDispositivo);
 
 const controlesMobile = { left: "a", jump: "w", right: "d" };
 
