@@ -24,8 +24,10 @@ let personagemAtual = "joao";
 const particulas = [];
 const meteoros = [];
 const poderes = [];
+const AJUSTE_VELOCIDADE_JOGAVEL = 0.93;
 let chefeTimer = null;
 let chefeTimerAtivo = false;
+let chefeTimerAlvo = null;
 let poderNeymarCooldown = 0;
 const botaoSom = document.getElementById("botaoSom");
 const activePlayerLabel = document.getElementById("activePlayerLabel");
@@ -658,6 +660,7 @@ function chefesVivosDaFase() {
 function resetarTimerChefe() {
   chefeTimer = null;
   chefeTimerAtivo = false;
+  chefeTimerAlvo = null;
 }
 
 function atualizarTimerChefe() {
@@ -669,9 +672,24 @@ function atualizarTimerChefe() {
   }
 
   if (!chefeTimerAtivo) {
+    const alvo = chefesVivos.find(chefe => {
+      const centroChefe = chefe.x + chefe.w / 2;
+      const centroJogador = joao.x + joao.w / 2;
+      const pertoDoChefe = Math.abs(centroChefe - centroJogador) < 260;
+      return pertoDoChefe || chefe.vida < chefe.vidaMax;
+    });
+
+    if (!alvo) return;
+
+    chefeTimerAlvo = alvo;
     chefeTimerAtivo = true;
     chefeTimer = 900;
-    mostrarAviso("Derrote o chefe em 15 segundos!");
+    mostrarAviso("Derrote " + (alvo.nome || "o chefe") + " em 15 segundos!");
+  }
+
+  if (!chefeTimerAlvo || chefeTimerAlvo.morto) {
+    resetarTimerChefe();
+    return;
   }
 
   chefeTimer--;
@@ -882,7 +900,7 @@ function atualizarPlataformasMoveis() {
     if (plataforma.baseX === undefined) plataforma.baseX = plataforma.x;
 
     plataforma.prevX = plataforma.x;
-    plataforma.x += plataforma.vel;
+    plataforma.x += plataforma.vel * AJUSTE_VELOCIDADE_JOGAVEL;
 
     if (plataforma.x <= plataforma.min || plataforma.x + plataforma.w >= plataforma.max) {
       plataforma.vel *= -1;
@@ -2046,7 +2064,7 @@ function atualizarInimigos() {
     if (i.morto) return;
     if (i.invencivel > 0) i.invencivel--;
 
-    i.x += i.vel * multiplicador;
+    i.x += i.vel * multiplicador * AJUSTE_VELOCIDADE_JOGAVEL;
 
     if (i.x <= i.min || i.x >= i.max) {
       i.vel *= -1;
@@ -2070,7 +2088,7 @@ function tentarDisparoVilao(vilao, indice) {
   const dx = centroJoaoX - centroVilaoX;
   const dy = centroJoaoY - centroVilaoY;
   const distancia = Math.max(1, Math.hypot(dx, dy));
-  const velocidade = 2.7 + faseAtual * 0.14 + (ehChefeVilao(vilao) ? 0.85 : 0);
+  const velocidade = (2.7 + faseAtual * 0.14 + (ehChefeVilao(vilao) ? 0.85 : 0)) * AJUSTE_VELOCIDADE_JOGAVEL;
 
   poderes.push({
     dono: "vilao",
@@ -2196,8 +2214,8 @@ function atualizarMeteoros() {
 
   for (let i = meteoros.length - 1; i >= 0; i--) {
     const meteoro = meteoros[i];
-    meteoro.x += meteoro.vx;
-    meteoro.y += meteoro.vy;
+    meteoro.x += meteoro.vx * AJUSTE_VELOCIDADE_JOGAVEL;
+    meteoro.y += meteoro.vy * AJUSTE_VELOCIDADE_JOGAVEL;
     meteoro.vy += 0.08;
 
     if (colisao(joao, meteoro)) {
