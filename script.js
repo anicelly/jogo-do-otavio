@@ -56,7 +56,7 @@ function aplicarModoDispositivo() {
 aplicarModoDispositivo();
 window.addEventListener("resize", aplicarModoDispositivo);
 
-const controlesMobile = { left: "a", jump: "w", right: "d" };
+const controlesMobile = { left: "a", jump: "w", right: "d", down: "s" };
 
 document.addEventListener("keydown", event => {
   iniciarAudio();
@@ -137,7 +137,8 @@ const personagensDisponiveis = {
   yoshi: { nome: "Yoshi", camisa: "#36c96b", calca: "#f7f3de", cabelo: "#36c96b", avatar: "yoshi", numero: "" },
   lobo: { nome: "Lobo", camisa: "#6c757d", calca: "#2b2d42", cabelo: "#495057", avatar: "lobo", numero: "" },
   miaw: { nome: "Miaw", camisa: "#ffd43b", calca: "#fff3bf", cabelo: "#ffd43b", avatar: "miaw", numero: "" },
-  neymar: { nome: "Neymar", camisa: "#ffe066", calca: "#2457c5", cabelo: "#f7c948", avatar: "neymar", numero: "10" }
+  neymar: { nome: "Neymar", camisa: "#ffe066", calca: "#2457c5", cabelo: "#f7c948", avatar: "neymar", numero: "10" },
+  goku: { nome: "Goku", camisa: "#ff7b00", calca: "#0b5ed7", cabelo: "#111111", avatar: "goku", numero: "" }
 };
 
 function selecionarPersonagem(id) {
@@ -452,10 +453,10 @@ const fases = [
     plataformas: [
       { x: 0, y: 486, w: 118, h: 54, tipo: "castelo" },
       { x: 768, y: 486, w: 192, h: 54, tipo: "castelo" },
-      { x: 142, y: 408, w: 92, h: 20, tipo: "castelo", movel: true, min: 100, max: 294, vel: 2.2 },
-      { x: 340, y: 346, w: 86, h: 20, tipo: "castelo", movel: true, min: 284, max: 502, vel: -2.6 },
-      { x: 556, y: 286, w: 84, h: 20, tipo: "castelo", movel: true, min: 488, max: 696, vel: 2.8 },
-      { x: 744, y: 232, w: 92, h: 20, tipo: "castelo", movel: true, min: 694, max: 850, vel: -2.4 }
+      { x: 142, y: 408, w: 92, h: 20, tipo: "castelo", movel: true, min: 100, max: 294, vel: 1.45 },
+      { x: 340, y: 346, w: 86, h: 20, tipo: "castelo", movel: true, min: 284, max: 502, vel: -1.65 },
+      { x: 556, y: 286, w: 84, h: 20, tipo: "castelo", movel: true, min: 488, max: 696, vel: 1.75 },
+      { x: 744, y: 232, w: 92, h: 20, tipo: "castelo", movel: true, min: 694, max: 850, vel: -1.55 }
     ],
     tachas: [
       { x: 118, y: 500, w: 650, h: 40 }
@@ -483,10 +484,10 @@ const fases = [
     plataformas: [
       { x: 0, y: 486, w: 92, h: 54, tipo: "castelo" },
       { x: 828, y: 486, w: 132, h: 54, tipo: "castelo" },
-      { x: 118, y: 420, w: 74, h: 20, tipo: "castelo", movel: true, min: 72, max: 284, vel: 3.2 },
-      { x: 308, y: 358, w: 70, h: 20, tipo: "castelo", movel: true, min: 248, max: 474, vel: -3.5 },
-      { x: 522, y: 298, w: 68, h: 20, tipo: "castelo", movel: true, min: 456, max: 674, vel: 3.7 },
-      { x: 710, y: 238, w: 72, h: 20, tipo: "castelo", movel: true, min: 646, max: 854, vel: -3.3 }
+      { x: 118, y: 420, w: 74, h: 20, tipo: "castelo", movel: true, min: 72, max: 284, vel: 1.85 },
+      { x: 308, y: 358, w: 70, h: 20, tipo: "castelo", movel: true, min: 248, max: 474, vel: -2.05 },
+      { x: 522, y: 298, w: 68, h: 20, tipo: "castelo", movel: true, min: 456, max: 674, vel: 2.15 },
+      { x: 710, y: 238, w: 72, h: 20, tipo: "castelo", movel: true, min: 646, max: 854, vel: -1.95 }
     ],
     tachas: [
       { x: 92, y: 500, w: 736, h: 40 }
@@ -515,10 +516,10 @@ const fases = [
     plataformas: [
       { x: 0, y: 486, w: 76, h: 54, tipo: "castelo" },
       { x: 858, y: 486, w: 102, h: 54, tipo: "castelo" },
-      { x: 112, y: 424, w: 62, h: 18, tipo: "castelo", movel: true, min: 78, max: 278, vel: 4.0 },
-      { x: 304, y: 366, w: 58, h: 18, tipo: "castelo", movel: true, min: 248, max: 464, vel: -4.4 },
-      { x: 510, y: 306, w: 58, h: 18, tipo: "castelo", movel: true, min: 448, max: 650, vel: 4.2 },
-      { x: 696, y: 246, w: 62, h: 18, tipo: "castelo", movel: true, min: 636, max: 824, vel: -4.0 }
+      { x: 112, y: 424, w: 62, h: 18, tipo: "castelo", movel: true, min: 78, max: 278, vel: 2.2 },
+      { x: 304, y: 366, w: 58, h: 18, tipo: "castelo", movel: true, min: 248, max: 464, vel: -2.35 },
+      { x: 510, y: 306, w: 58, h: 18, tipo: "castelo", movel: true, min: 448, max: 650, vel: 2.25 },
+      { x: 696, y: 246, w: 62, h: 18, tipo: "castelo", movel: true, min: 636, max: 824, vel: -2.15 }
     ],
     tachas: [
       { x: 76, y: 496, w: 782, h: 44 }
@@ -561,7 +562,10 @@ function criarJogador(nome, x, corCamisa, corCalca, cabelo) {
     invencivel: 0,
     montado: false,
     grande: false,
-    poderTempo: 0
+    poderTempo: 0,
+    agachado: false,
+    alturaNormal: 58,
+    alturaAgachado: 38
   };
 }
 
@@ -640,7 +644,7 @@ function mostrarAviso(texto) {
 }
 
 function dificuldadeFinal() {
-  return 1.28 + faseAtual * 0.15 + (faseAtual >= 5 ? 0.28 : 0) + (faseAtual >= 9 ? 0.22 : 0);
+  return 0.92 + faseAtual * 0.07 + (faseAtual >= 5 ? 0.12 : 0) + (faseAtual >= 9 ? 0.08 : 0);
 }
 
 function ehChefeVilao(vilao) {
@@ -666,8 +670,8 @@ function atualizarTimerChefe() {
 
   if (!chefeTimerAtivo) {
     chefeTimerAtivo = true;
-    chefeTimer = 360;
-    mostrarAviso("Derrote o chefe em 6 segundos!");
+    chefeTimer = 900;
+    mostrarAviso("Derrote o chefe em 15 segundos!");
   }
 
   chefeTimer--;
@@ -771,6 +775,24 @@ function tocarMusica() {
   musicaTimer--;
   if (musicaTimer > 0) return;
 
+  const temVilaoVivo = jogoIniciado && fases[faseAtual].inimigos.some(i => !i.morto);
+  if (temVilaoVivo) {
+    const melodiaVilao = [196, 208, 196, 247, 233, 196, 185, 196, 294, 277, 247, 233, 196, 175, 165, 147];
+    const baixoVilao = [98, 98, 123, 98, 87, 98, 73, 82];
+    const sireneVilao = [392, 370, 349, 330];
+    tocarTom(melodiaVilao[notaMusica % melodiaVilao.length], 0.15, "square", 0.068);
+    tocarTom(baixoVilao[Math.floor(notaMusica / 2) % baixoVilao.length], 0.2, "sawtooth", 0.048);
+    if (notaMusica % 4 === 0) {
+      tocarTom(sireneVilao[Math.floor(notaMusica / 4) % sireneVilao.length], 0.1, "square", 0.036, 0.04);
+    }
+    if (notaMusica % 8 === 0) {
+      tocarTom(73, 0.16, "triangle", 0.055, 0.02);
+    }
+    notaMusica++;
+    musicaTimer = 12;
+    return;
+  }
+
   const melodia = [392, 392, 523, 659, 587, 523, 440, 523, 349, 349, 440, 587, 523, 440, 392, 330];
   const harmonia = [196, 247, 262, 247, 220, 262, 294, 247];
   const baixo = [98, 147, 131, 147, 110, 165, 147, 123];
@@ -832,6 +854,8 @@ function resetarPersonagens() {
   joao.montado = false;
   joao.grande = false;
   joao.poderTempo = 0;
+  joao.agachado = false;
+  joao.h = joao.alturaNormal;
 
 }
 
@@ -873,7 +897,22 @@ function moverPersonagem(p, esquerda, direita, pulo) {
   p.prevY = p.y;
   p.velX = 0;
   p.andando = false;
-  const velocidade = (p.montado ? 5.35 : 4.35) + (p.grande ? 0.45 : 0);
+  const querAbaixar = teclaAtiva(["s", "ArrowDown"]);
+
+  if (querAbaixar && !p.agachado && !p.montado) {
+    p.y += p.h - p.alturaAgachado;
+    p.h = p.alturaAgachado;
+    p.agachado = true;
+  }
+
+  if ((!querAbaixar || p.montado) && p.agachado) {
+    p.y -= p.alturaNormal - p.h;
+    p.h = p.alturaNormal;
+    p.agachado = false;
+  }
+
+  const velocidadeBase = (p.montado ? 5.35 : 4.35) + (p.grande ? 0.45 : 0);
+  const velocidade = p.agachado ? velocidadeBase * 0.58 : velocidadeBase;
   const forcaPulo = (p.montado ? -15.2 : -13.2) - (p.grande ? 0.8 : 0);
   const gravidade = p.montado ? 0.58 : 0.64;
 
@@ -1198,6 +1237,12 @@ function desenharBoneco(p) {
     return;
   }
 
+  if (p.avatar === "goku") {
+    desenharGokuNuvemDourada(p);
+    desenharEtiqueta(p.agachado ? "Goku abaixado" : "Goku na nuvem", p.x + p.w / 2, p.y - 10);
+    return;
+  }
+
   const baseY = p.montado ? p.y - 18 : p.y;
   const escala = p.grande ? 1.18 : 1;
   const offsetX = p.grande ? -3 : 0;
@@ -1334,6 +1379,53 @@ function desenharNeymarMuletas(p) {
   ctx.fillRect(40, 24, 12, 4);
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(48, 23, 6, 6);
+
+  ctx.restore();
+}
+
+function desenharGokuNuvemDourada(p) {
+  const baseY = p.y + (p.agachado ? 10 : 0);
+  const bob = Math.sin(frame / 10) * 2;
+
+  ctx.save();
+  if (p.direcao === -1) {
+    ctx.translate(p.x + p.w, baseY);
+    ctx.scale(-1, 1);
+  } else {
+    ctx.translate(p.x, baseY);
+  }
+
+  ctx.fillStyle = "rgba(0, 0, 0, 0.24)";
+  ctx.fillRect(-4, 56 + bob, 48, 6);
+
+  ctx.fillStyle = "#f7c948";
+  ctx.fillRect(-8, 42 + bob, 52, 16);
+  ctx.fillRect(0, 34 + bob, 38, 18);
+  ctx.fillRect(18, 30 + bob, 30, 16);
+  ctx.fillStyle = "#ffe066";
+  ctx.fillRect(-2, 37 + bob, 30, 10);
+  ctx.fillRect(24, 34 + bob, 20, 9);
+
+  const corpoY = p.agachado ? 10 : 0;
+  ctx.fillStyle = "#f1c27d";
+  ctx.fillRect(8, 4 + corpoY, 22, 19);
+  ctx.fillStyle = "#111111";
+  ctx.fillRect(4, -2 + corpoY, 9, 12);
+  ctx.fillRect(12, -7 + corpoY, 8, 13);
+  ctx.fillRect(21, -3 + corpoY, 10, 12);
+  ctx.fillStyle = "#050505";
+  ctx.fillRect(13, 11 + corpoY, 4, 4);
+  ctx.fillRect(23, 11 + corpoY, 4, 4);
+
+  ctx.fillStyle = "#ff7b00";
+  ctx.fillRect(7, 25 + corpoY, 24, p.agachado ? 14 : 20);
+  ctx.fillStyle = "#0b5ed7";
+  ctx.fillRect(11, 28 + corpoY, 16, 5);
+  ctx.fillRect(8, 43 + corpoY, 8, 12);
+  ctx.fillRect(22, 43 + corpoY, 8, 12);
+  ctx.fillStyle = "#0b1f4d";
+  ctx.fillRect(6, 54 + corpoY, 11, 4);
+  ctx.fillRect(21, 54 + corpoY, 11, 4);
 
   ctx.restore();
 }
@@ -1968,7 +2060,7 @@ function atualizarInimigos() {
 }
 
 function tentarDisparoVilao(vilao, indice) {
-  const intervalo = Math.max(24, 74 - faseAtual * 6);
+  const intervalo = Math.max(42, 104 - faseAtual * 4);
   if ((frame + indice * 17) % intervalo !== 0) return;
 
   const centroVilaoX = vilao.x + vilao.w / 2;
@@ -1978,7 +2070,7 @@ function tentarDisparoVilao(vilao, indice) {
   const dx = centroJoaoX - centroVilaoX;
   const dy = centroJoaoY - centroVilaoY;
   const distancia = Math.max(1, Math.hypot(dx, dy));
-  const velocidade = 3.8 + faseAtual * 0.28 + (ehChefeVilao(vilao) ? 1.55 : 0);
+  const velocidade = 2.7 + faseAtual * 0.14 + (ehChefeVilao(vilao) ? 0.85 : 0);
 
   poderes.push({
     dono: "vilao",
@@ -2366,7 +2458,7 @@ function telaGameOver() {
   desenharFundo(fases[faseAtual]);
   fases[faseAtual].plataformas.forEach(desenharPlataforma);
   desenharPainelCentral("GAME OVER", [
-    "O vilao nao foi derrotado em 6 segundos",
+    "O vilao nao foi derrotado em 15 segundos",
     "Pressione ENTER ou clique em Reiniciar",
     "Neymar dispara poder pela muleta automaticamente"
   ], "#ef476f");
