@@ -169,6 +169,10 @@ body.device-tablet .touch-controls {
 }
 
 body.device-desktop .touch-controls {
+  display: grid;
+}
+
+body.device-desktop .touch-pad {
   display: none;
 }
 
