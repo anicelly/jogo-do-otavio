@@ -8,6 +8,7 @@ let faseAtual = 0;
 let moedas = 0;
 let yoshis = 0;
 let venceu = false;
+let gameOver = false;
 let jogoIniciado = false;
 let pausado = false;
 let frame = 0;
@@ -21,6 +22,11 @@ let musicaTimer = 0;
 let notaMusica = 0;
 let personagemAtual = "joao";
 const particulas = [];
+const meteoros = [];
+const poderes = [];
+let chefeTimer = null;
+let chefeTimerAtivo = false;
+let poderNeymarCooldown = 0;
 const botaoSom = document.getElementById("botaoSom");
 const activePlayerLabel = document.getElementById("activePlayerLabel");
 const deviceMode = document.getElementById("deviceMode");
@@ -54,10 +60,14 @@ const controlesMobile = { left: "a", jump: "w", right: "d" };
 
 document.addEventListener("keydown", event => {
   iniciarAudio();
+  if (gameOver && (event.key === "Enter" || event.key === " ")) {
+    reiniciarJogo();
+    return;
+  }
   if (event.key === "Enter" || event.key === " ") {
     jogoIniciado = true;
   }
-  if (event.key.toLowerCase() === "p" && jogoIniciado && !venceu) {
+  if (event.key.toLowerCase() === "p" && jogoIniciado && !venceu && !gameOver) {
     pausado = !pausado;
   }
   keys[event.key.toLowerCase()] = true;
@@ -126,7 +136,8 @@ const personagensDisponiveis = {
   messi: { nome: "Messi", camisa: "#74c0fc", calca: "#ffffff", cabelo: "#5c2e12", avatar: "humano", numero: "10" },
   yoshi: { nome: "Yoshi", camisa: "#36c96b", calca: "#f7f3de", cabelo: "#36c96b", avatar: "yoshi", numero: "" },
   lobo: { nome: "Lobo", camisa: "#6c757d", calca: "#2b2d42", cabelo: "#495057", avatar: "lobo", numero: "" },
-  miaw: { nome: "Miaw", camisa: "#ffd43b", calca: "#fff3bf", cabelo: "#ffd43b", avatar: "miaw", numero: "" }
+  miaw: { nome: "Miaw", camisa: "#ffd43b", calca: "#fff3bf", cabelo: "#ffd43b", avatar: "miaw", numero: "" },
+  neymar: { nome: "Neymar", camisa: "#ffe066", calca: "#2457c5", cabelo: "#f7c948", avatar: "neymar", numero: "10" }
 };
 
 function selecionarPersonagem(id) {
@@ -299,10 +310,10 @@ const fases = [
       { x: 210, y: 486, w: 142, h: 54, tipo: "castelo" },
       { x: 414, y: 486, w: 156, h: 54, tipo: "castelo" },
       { x: 640, y: 486, w: 320, h: 54, tipo: "castelo" },
-      { x: 102, y: 396, w: 112, h: 24, tipo: "castelo" },
-      { x: 292, y: 344, w: 124, h: 24, tipo: "castelo" },
-      { x: 494, y: 292, w: 118, h: 24, tipo: "castelo" },
-      { x: 700, y: 240, w: 168, h: 24, tipo: "castelo" }
+      { x: 102, y: 396, w: 92, h: 22, tipo: "castelo" },
+      { x: 292, y: 344, w: 96, h: 22, tipo: "castelo" },
+      { x: 496, y: 292, w: 88, h: 22, tipo: "castelo" },
+      { x: 704, y: 240, w: 136, h: 22, tipo: "castelo" }
     ],
     portal: { x: 850, y: 180, w: 58, h: 60 },
     princesa: { x: 796, y: 180 },
@@ -316,17 +327,17 @@ const fases = [
       { x: 722, y: 442, coletada: false }
     ],
     cogumelos: [
-      { x: 330, y: 312, coletado: false },
       { x: 742, y: 208, coletado: false }
     ],
     inimigos: [
-      criarVilao("soldado", 118, 354, 3.4, 96, 208),
-      criarVilao("soldado", 246, 438, 3.9, 214, 338),
-      criarVilao("cavaleiro", 450, 438, 3.2, 420, 554),
-      criarVilao("soldado", 528, 250, 2.8, 500, 598),
-      criarVilao("cavaleiro", 690, 436, 3.5, 644, 828),
-      criarVilao("soldado", 786, 198, 2.7, 710, 850),
-      criarChefeFinal(656, 416)
+      criarVilao("soldado", 118, 354, 4.6, 96, 194),
+      criarVilao("soldado", 246, 438, 5.1, 214, 338),
+      criarVilao("cavaleiro", 450, 438, 4.4, 420, 554),
+      criarVilao("soldado", 528, 250, 4.2, 500, 584),
+      criarVilao("cavaleiro", 690, 436, 4.7, 644, 828),
+      criarVilao("soldado", 786, 198, 3.8, 710, 840),
+      criarVilao("messi", 354, 286, 4.0, 300, 392),
+      criarChefeFinal(656, 416, "Rei Vulcao Furioso", 7)
     ]
   },
   {
@@ -335,10 +346,10 @@ const fases = [
     tema: "estadio",
     plataformas: [
       { x: 0, y: 486, w: 960, h: 54, tipo: "grama" },
-      { x: 118, y: 408, w: 142, h: 24, tipo: "grama" },
-      { x: 336, y: 354, w: 146, h: 24, tipo: "grama" },
-      { x: 574, y: 300, w: 148, h: 24, tipo: "grama" },
-      { x: 782, y: 390, w: 118, h: 24, tipo: "grama" }
+      { x: 118, y: 408, w: 108, h: 22, tipo: "grama" },
+      { x: 342, y: 354, w: 106, h: 22, tipo: "grama" },
+      { x: 584, y: 300, w: 104, h: 22, tipo: "grama" },
+      { x: 800, y: 390, w: 88, h: 22, tipo: "grama" }
     ],
     portal: { x: 836, y: 330, w: 58, h: 60 },
     yoshi: { x: 138, y: 364, salvo: false },
@@ -354,9 +365,11 @@ const fases = [
       { x: 418, y: 322, coletado: false }
     ],
     inimigos: [
-      criarVilao("messi", 520, 428, 2.8, 430, 720),
-      criarVilao("soldado", 262, 444, 3.4, 220, 390),
-      criarVilao("cavaleiro", 704, 436, 2.6, 610, 830)
+      criarVilao("messi", 520, 428, 4.5, 430, 720),
+      criarVilao("soldado", 262, 444, 4.7, 220, 390),
+      criarVilao("cavaleiro", 704, 436, 4.0, 610, 830),
+      criarVilao("messi", 388, 296, 3.8, 350, 448),
+      criarVilao("soldado", 828, 348, 3.6, 802, 888)
     ]
   },
   {
@@ -365,10 +378,10 @@ const fases = [
     tema: "floresta-noite",
     plataformas: [
       { x: 0, y: 486, w: 960, h: 54, tipo: "grama" },
-      { x: 86, y: 398, w: 138, h: 24, tipo: "grama" },
-      { x: 286, y: 338, w: 142, h: 24, tipo: "grama" },
-      { x: 506, y: 286, w: 150, h: 24, tipo: "grama" },
-      { x: 728, y: 232, w: 150, h: 24, tipo: "grama" }
+      { x: 86, y: 398, w: 106, h: 22, tipo: "grama" },
+      { x: 298, y: 338, w: 102, h: 22, tipo: "grama" },
+      { x: 524, y: 286, w: 98, h: 22, tipo: "grama" },
+      { x: 748, y: 232, w: 106, h: 22, tipo: "grama" }
     ],
     portal: { x: 824, y: 172, w: 58, h: 60 },
     yoshi: { x: 110, y: 354, salvo: false },
@@ -381,13 +394,14 @@ const fases = [
       { x: 900, y: 442, coletada: false }
     ],
     cogumelos: [
-      { x: 344, y: 306, coletado: false },
       { x: 794, y: 200, coletado: false }
     ],
     inimigos: [
-      criarVilao("lobo", 334, 448, 3.2, 250, 478),
-      criarVilao("lobo", 632, 448, 3.8, 560, 842),
-      criarVilao("messi", 746, 174, 2.4, 730, 856)
+      criarVilao("lobo", 334, 448, 4.9, 250, 478),
+      criarVilao("lobo", 632, 448, 5.3, 560, 842),
+      criarVilao("messi", 746, 174, 3.9, 730, 856),
+      criarVilao("lobo", 392, 286, 4.0, 304, 400),
+      criarVilao("soldado", 552, 244, 3.7, 526, 620)
     ]
   },
   {
@@ -400,11 +414,11 @@ const fases = [
       { x: 340, y: 486, w: 92, h: 54, tipo: "castelo" },
       { x: 502, y: 486, w: 94, h: 54, tipo: "castelo" },
       { x: 680, y: 486, w: 280, h: 54, tipo: "castelo" },
-      { x: 116, y: 404, w: 86, h: 22, tipo: "castelo" },
-      { x: 274, y: 348, w: 82, h: 22, tipo: "castelo" },
-      { x: 438, y: 292, w: 82, h: 22, tipo: "castelo" },
-      { x: 604, y: 236, w: 84, h: 22, tipo: "castelo" },
-      { x: 780, y: 298, w: 98, h: 22, tipo: "castelo" }
+      { x: 116, y: 404, w: 68, h: 20, tipo: "castelo" },
+      { x: 282, y: 348, w: 64, h: 20, tipo: "castelo" },
+      { x: 448, y: 292, w: 62, h: 20, tipo: "castelo" },
+      { x: 614, y: 236, w: 64, h: 20, tipo: "castelo" },
+      { x: 792, y: 298, w: 74, h: 20, tipo: "castelo" }
     ],
     portal: { x: 846, y: 238, w: 58, h: 60 },
     yoshi: { x: 92, y: 360, salvo: false },
@@ -421,11 +435,14 @@ const fases = [
       { x: 634, y: 204, coletado: false }
     ],
     inimigos: [
-      criarVilao("lobo", 208, 448, 4.2, 184, 272),
-      criarVilao("messi", 356, 428, 3.4, 342, 428),
-      criarVilao("cavaleiro", 520, 436, 4.0, 504, 590),
-      criarVilao("lobo", 724, 448, 4.5, 684, 842),
-      criarChefeFinal(754, 416, "Rei Supremo", 8, "rei")
+      criarVilao("lobo", 208, 448, 5.8, 184, 272),
+      criarVilao("messi", 356, 428, 5.0, 342, 428),
+      criarVilao("cavaleiro", 520, 436, 5.5, 504, 590),
+      criarVilao("lobo", 724, 448, 6.0, 684, 842),
+      criarVilao("soldado", 148, 362, 4.4, 118, 184),
+      criarVilao("messi", 632, 178, 4.2, 616, 678),
+      criarChefeFinal(754, 416, "Rei Supremo Impossivel", 12, "rei"),
+      criarCellBesta(676, 392)
     ]
   }
 ];
@@ -493,6 +510,25 @@ function criarChefeFinal(x, y, nome = "Rei Vulcao", vida = 5, tipo = "chefe") {
   };
 }
 
+function criarCellBesta(x, y) {
+  return {
+    tipo: "cellbesta",
+    nome: "Cell + Besta Ben 10",
+    x,
+    y,
+    w: 104,
+    h: 94,
+    vel: 4.1,
+    min: 644,
+    max: 856,
+    direcao: 1,
+    vida: 9,
+    vidaMax: 9,
+    invencivel: 0,
+    morto: false
+  };
+}
+
 function colisao(a, b) {
   return (
     a.x < b.x + b.w &&
@@ -505,6 +541,48 @@ function colisao(a, b) {
 function mostrarAviso(texto) {
   aviso = texto;
   avisoTempo = 140;
+}
+
+function dificuldadeFinal() {
+  return 1.16 + faseAtual * 0.12 + (faseAtual >= 5 ? 0.22 : 0);
+}
+
+function ehChefeVilao(vilao) {
+  return vilao.tipo === "chefe" || vilao.tipo === "rei" || vilao.tipo === "cellbesta";
+}
+
+function chefesVivosDaFase() {
+  return fases[faseAtual].inimigos.filter(i => ehChefeVilao(i) && !i.morto);
+}
+
+function resetarTimerChefe() {
+  chefeTimer = null;
+  chefeTimerAtivo = false;
+}
+
+function atualizarTimerChefe() {
+  const chefesVivos = chefesVivosDaFase();
+
+  if (chefesVivos.length === 0) {
+    resetarTimerChefe();
+    return;
+  }
+
+  if (!chefeTimerAtivo) {
+    chefeTimerAtivo = true;
+    chefeTimer = 360;
+    mostrarAviso("Derrote o chefe em 6 segundos!");
+  }
+
+  chefeTimer--;
+
+  if (chefeTimer <= 0) {
+    gameOver = true;
+    pausado = false;
+    tocarSom("dano");
+    tremor = 30;
+    mensagem.innerText = "Game over! O vilao venceu.";
+  }
 }
 
 function iniciarAudio() {
@@ -645,6 +723,9 @@ function desenharParticulas() {
 function resetarPersonagens() {
   const fase = fases[faseAtual];
   if (fase && fase.yoshi) fase.yoshi.montadoPor = null;
+  meteoros.length = 0;
+  poderes.length = 0;
+  poderNeymarCooldown = 0;
 
   joao.x = 52;
   joao.y = 422;
@@ -957,6 +1038,12 @@ function desenharBoneco(p) {
     return;
   }
 
+  if (p.avatar === "neymar") {
+    desenharNeymarMuletas(p);
+    desenharEtiqueta(p.nome + " + muleta power", p.x + p.w / 2, p.y - 10);
+    return;
+  }
+
   const baseY = p.montado ? p.y - 18 : p.y;
   const escala = p.grande ? 1.18 : 1;
   const offsetX = p.grande ? -3 : 0;
@@ -1029,6 +1116,72 @@ function desenharBoneco(p) {
   ctx.restore();
 
   desenharEtiqueta(p.montado ? p.nome + " + Yoshi" : p.nome, p.x + p.w / 2, baseY - 8);
+}
+
+function desenharNeymarMuletas(p) {
+  const passo = p.andando && p.noChao ? Math.floor(frame / 6) % 2 : 0;
+  const piscando = p.invencivel > 0 && Math.floor(frame / 5) % 2 === 0;
+  if (piscando) return;
+
+  const baseY = p.montado ? p.y - 18 : p.y;
+  if (p.montado) desenharYoshiMontaria(p);
+
+  ctx.save();
+  if (p.direcao === -1) {
+    ctx.translate(p.x + p.w, baseY);
+    ctx.scale(-1, 1);
+  } else {
+    ctx.translate(p.x, baseY);
+  }
+
+  ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
+  if (!p.montado) ctx.fillRect(0, 56, 38, 5);
+
+  ctx.fillStyle = "#f1c27d";
+  ctx.fillRect(7, 4, 22, 20);
+  ctx.fillStyle = "#f7c948";
+  ctx.fillRect(5, 0, 26, 8);
+  ctx.fillRect(10, -4, 16, 5);
+  ctx.fillStyle = "#111111";
+  ctx.fillRect(12, 12, 4, 4);
+  ctx.fillRect(23, 12, 4, 4);
+  ctx.fillRect(15, 19, 9, 2);
+
+  ctx.fillStyle = "#ffe066";
+  ctx.fillRect(6, 25, 24, 20);
+  ctx.fillStyle = "#2457c5";
+  ctx.fillRect(14, 28, 9, 14);
+  ctx.fillStyle = "#111111";
+  ctx.font = "9px monospace";
+  ctx.fillText("10", 12, 39);
+
+  ctx.fillStyle = "#2457c5";
+  if (passo === 0) {
+    ctx.fillRect(8, 45, 8, 13);
+    ctx.fillRect(22, 46, 8, 10);
+  } else {
+    ctx.fillRect(6, 46, 8, 10);
+    ctx.fillRect(24, 45, 8, 13);
+  }
+  ctx.fillStyle = "#050505";
+  ctx.fillRect(5, 56, 12, 4);
+  ctx.fillRect(21, 56, 12, 4);
+
+  ctx.strokeStyle = "#d0d7de";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(1, 24);
+  ctx.lineTo(9, 60);
+  ctx.moveTo(34, 24);
+  ctx.lineTo(28, 60);
+  ctx.stroke();
+  ctx.fillStyle = "#ffe066";
+  ctx.fillRect(34, 22, 8, 8);
+  ctx.fillRect(40, 24, 12, 4);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(48, 23, 6, 6);
+
+  ctx.restore();
 }
 
 function desenharEtiqueta(texto, x, y) {
@@ -1147,6 +1300,11 @@ function desenharCogumelo(c) {
 
 function desenharVilao(i) {
   if (i.morto) return;
+
+  if (i.tipo === "cellbesta") {
+    desenharCellMontadoNaBesta(i);
+    return;
+  }
 
   if (i.tipo === "chefe" || i.tipo === "rei") {
     desenharChefeFinal(i);
@@ -1431,6 +1589,75 @@ function desenharChefeFinal(i) {
   desenharEtiqueta(i.nome || "Rei Vulcao", i.x + i.w / 2, i.y - 28);
 }
 
+function desenharCellMontadoNaBesta(i) {
+  if (i.invencivel > 0 && Math.floor(frame / 4) % 2 === 0) return;
+
+  ctx.save();
+  if (i.direcao < 0) {
+    ctx.translate(i.x + i.w, i.y);
+    ctx.scale(-1, 1);
+  } else {
+    ctx.translate(i.x, i.y);
+  }
+
+  ctx.fillStyle = "rgba(0, 0, 0, 0.42)";
+  ctx.fillRect(6, 84, 96, 8);
+
+  // Besta alienigena verde em pixel art, usada como montaria do Cell.
+  ctx.fillStyle = "#2d9f43";
+  ctx.fillRect(8, 48, 70, 34);
+  ctx.fillRect(60, 34, 34, 34);
+  ctx.fillStyle = "#54d66d";
+  ctx.fillRect(14, 40, 52, 16);
+  ctx.fillRect(66, 28, 22, 14);
+  ctx.fillStyle = "#0b1f12";
+  ctx.fillRect(74, 42, 6, 6);
+  ctx.fillStyle = "#e9ff70";
+  ctx.fillRect(82, 42, 8, 5);
+  ctx.fillStyle = "#1f7a34";
+  ctx.fillRect(4, 60, 14, 10);
+  ctx.fillRect(72, 64, 18, 10);
+  ctx.fillStyle = "#14251a";
+  ctx.fillRect(16, 78, 12, 12);
+  ctx.fillRect(54, 78, 12, 12);
+  ctx.fillRect(80, 70, 10, 14);
+  ctx.fillStyle = "#f7f3de";
+  ctx.fillRect(90, 52, 6, 4);
+  ctx.fillRect(92, 59, 6, 4);
+
+  // Cell pixelado montado em cima.
+  ctx.fillStyle = "#101820";
+  ctx.fillRect(34, 22, 26, 28);
+  ctx.fillStyle = "#75d66f";
+  ctx.fillRect(30, 10, 34, 18);
+  ctx.fillRect(26, 24, 10, 24);
+  ctx.fillRect(58, 24, 10, 24);
+  ctx.fillStyle = "#d7ff8f";
+  ctx.fillRect(36, 16, 22, 8);
+  ctx.fillStyle = "#111111";
+  ctx.fillRect(40, 18, 4, 4);
+  ctx.fillRect(52, 18, 4, 4);
+  ctx.fillStyle = "#7b2cbf";
+  ctx.fillRect(36, 50, 9, 20);
+  ctx.fillRect(50, 50, 9, 20);
+  ctx.fillStyle = "#0b1f12";
+  ctx.fillRect(24, 0, 10, 18);
+  ctx.fillRect(60, 0, 10, 18);
+  ctx.fillStyle = "#ff0054";
+  ctx.fillRect(44, 29, 8, 5);
+
+  ctx.restore();
+
+  const barraW = 112;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.72)";
+  ctx.fillRect(i.x - 4, i.y - 24, barraW, 10);
+  ctx.fillStyle = "#7fff00";
+  ctx.fillRect(i.x - 2, i.y - 22, (barraW - 4) * (i.vida / i.vidaMax), 6);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.34)";
+  ctx.strokeRect(i.x - 4, i.y - 24, barraW, 10);
+  desenharEtiqueta("Cell na Besta", i.x + i.w / 2, i.y - 30);
+}
+
 function desenharPrincesa(princesa) {
   const bob = Math.sin(frame / 16) * 2;
   const x = princesa.x;
@@ -1479,6 +1706,17 @@ function desenharPortal(portal) {
   desenharEtiqueta("Portal", portal.x + portal.w / 2, portal.y - 8);
 }
 
+function desenharMeteoros() {
+  meteoros.forEach(meteoro => {
+    ctx.fillStyle = "rgba(255, 61, 0, 0.28)";
+    ctx.fillRect(meteoro.x - 10, meteoro.y - 18, meteoro.w + 20, meteoro.h + 26);
+    ctx.fillStyle = "#ff3d00";
+    ctx.fillRect(meteoro.x, meteoro.y, meteoro.w, meteoro.h);
+    ctx.fillStyle = "#ffd166";
+    ctx.fillRect(meteoro.x + 5, meteoro.y + 5, meteoro.w - 10, meteoro.h - 10);
+  });
+}
+
 function desenharHUD(fase) {
   const mortos = fase.inimigos.filter(i => i.morto).length;
   const total = fase.inimigos.length;
@@ -1501,7 +1739,14 @@ function desenharHUD(fase) {
 
   ctx.fillStyle = "#9fb3c8";
   ctx.font = "13px monospace";
-  ctx.fillText("Fase " + (faseAtual + 1) + "/" + fases.length + "  |  P: pausar  |  Cogumelo cresce e derruba viloes", 30, 92);
+  ctx.fillText("Fase " + (faseAtual + 1) + "/" + fases.length + "  |  P: pausar  |  Neymar atira com a muleta", 30, 92);
+
+  if (chefeTimerAtivo && chefeTimer !== null) {
+    const segundos = Math.max(0, Math.ceil(chefeTimer / 60));
+    ctx.fillStyle = segundos <= 2 ? "#ef476f" : "#ff6b00";
+    ctx.font = "18px monospace";
+    ctx.fillText("CHEFE: " + segundos + "s", 590, 68);
+  }
 
   ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
   ctx.fillRect(502, 22, 216, 12);
@@ -1542,25 +1787,183 @@ function desenharFase() {
   });
 
   fase.inimigos.forEach(desenharVilao);
+  desenharMeteoros();
+  desenharPoderes();
 }
 
 function atualizarInimigos() {
   const fase = fases[faseAtual];
+  const multiplicador = dificuldadeFinal();
 
-  fase.inimigos.forEach(i => {
+  fase.inimigos.forEach((i, indice) => {
     if (i.morto) return;
     if (i.invencivel > 0) i.invencivel--;
 
-    i.x += i.vel;
+    i.x += i.vel * multiplicador;
 
     if (i.x <= i.min || i.x >= i.max) {
       i.vel *= -1;
     }
 
     i.direcao = i.vel >= 0 ? 1 : -1;
+    tentarDisparoVilao(i, indice);
 
     tratarColisaoVilao(joao, i);
   });
+}
+
+function tentarDisparoVilao(vilao, indice) {
+  const intervalo = Math.max(34, 92 - faseAtual * 7);
+  if ((frame + indice * 17) % intervalo !== 0) return;
+
+  const centroVilaoX = vilao.x + vilao.w / 2;
+  const centroVilaoY = vilao.y + Math.max(12, vilao.h / 2);
+  const centroJoaoX = joao.x + joao.w / 2;
+  const centroJoaoY = joao.y + joao.h / 2;
+  const dx = centroJoaoX - centroVilaoX;
+  const dy = centroJoaoY - centroVilaoY;
+  const distancia = Math.max(1, Math.hypot(dx, dy));
+  const velocidade = 3.2 + faseAtual * 0.22 + (ehChefeVilao(vilao) ? 1.3 : 0);
+
+  poderes.push({
+    dono: "vilao",
+    x: centroVilaoX,
+    y: centroVilaoY,
+    w: ehChefeVilao(vilao) ? 18 : 14,
+    h: ehChefeVilao(vilao) ? 18 : 14,
+    vx: (dx / distancia) * velocidade,
+    vy: (dy / distancia) * velocidade,
+    cor: ehChefeVilao(vilao) ? "#ff0054" : "#c77dff",
+    vida: 160
+  });
+}
+
+function dispararPoderNeymar() {
+  if (joao.avatar !== "neymar" || poderNeymarCooldown > 0 || gameOver || venceu) return;
+
+  poderNeymarCooldown = 34;
+  poderes.push({
+    dono: "neymar",
+    x: joao.x + joao.w / 2 + joao.direcao * 18,
+    y: joao.y + 28,
+    w: 18,
+    h: 10,
+    vx: joao.direcao * 8.2,
+    vy: -0.25,
+    cor: "#ffe066",
+    vida: 80
+  });
+  tocarSom("gol");
+}
+
+function atualizarPoderNeymar() {
+  if (poderNeymarCooldown > 0) poderNeymarCooldown--;
+  if (joao.avatar === "neymar" && jogoIniciado && !pausado && !gameOver && frame % 36 === 0) {
+    dispararPoderNeymar();
+  }
+}
+
+function atualizarPoderes() {
+  for (let p = poderes.length - 1; p >= 0; p--) {
+    const poder = poderes[p];
+    poder.x += poder.vx;
+    poder.y += poder.vy;
+    poder.vida--;
+
+    if (poder.dono === "vilao" && joao.invencivel <= 0 && colisao(joao, poder)) {
+      mostrarAviso("Poder do vilao acertou!");
+      tocarSom("dano");
+      tremor = 18;
+      criarParticulas(joao.x + joao.w / 2, joao.y + joao.h / 2, poder.cor, 22);
+      resetarPersonagens();
+      return;
+    }
+
+    if (poder.dono === "neymar") {
+      const alvo = fases[faseAtual].inimigos.find(i => !i.morto && colisao(i, poder));
+      if (alvo) {
+        if (ehChefeVilao(alvo)) {
+          alvo.vida--;
+          alvo.invencivel = 18;
+          if (alvo.vida <= 0) {
+            alvo.morto = true;
+            tocarSom("vitoria");
+            mostrarAviso("Muleta poderosa derrotou " + (alvo.nome || "o chefe") + "!");
+          } else {
+            mostrarAviso("Muleta acertou! Vida: " + alvo.vida + "/" + alvo.vidaMax);
+          }
+        } else {
+          alvo.morto = true;
+          mostrarAviso("Neymar derrubou um vilao com a muleta!");
+        }
+        criarParticulas(poder.x, poder.y, "#ffe066", 20);
+        poderes.splice(p, 1);
+        continue;
+      }
+    }
+
+    if (
+      poder.vida <= 0 ||
+      poder.x < -40 ||
+      poder.x > canvas.width + 40 ||
+      poder.y < -60 ||
+      poder.y > canvas.height + 60
+    ) {
+      poderes.splice(p, 1);
+    }
+  }
+}
+
+function desenharPoderes() {
+  poderes.forEach(poder => {
+    ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+    ctx.fillRect(poder.x - 3, poder.y - 3, poder.w + 6, poder.h + 6);
+    ctx.fillStyle = poder.cor;
+    ctx.fillRect(poder.x, poder.y, poder.w, poder.h);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(poder.x + 4, poder.y + 3, Math.max(3, poder.w - 8), 3);
+  });
+}
+
+function criarMeteoro() {
+  const intensidade = faseAtual >= 8 ? 1.45 : faseAtual >= 5 ? 1.1 : 1;
+  meteoros.push({
+    x: 90 + Math.random() * 780,
+    y: -34,
+    w: 22 + Math.random() * 12,
+    h: 22 + Math.random() * 12,
+    vx: (Math.random() - 0.5) * 2.6 * intensidade,
+    vy: (4.8 + Math.random() * 2.6) * intensidade
+  });
+}
+
+function atualizarMeteoros() {
+  const fase = fases[faseAtual];
+  if (faseAtual < 5 || fase.tema !== "vulcao") {
+    meteoros.length = 0;
+    return;
+  }
+
+  const intervalo = Math.max(24, 58 - faseAtual * 5);
+  if (frame % intervalo === 0) criarMeteoro();
+
+  for (let i = meteoros.length - 1; i >= 0; i--) {
+    const meteoro = meteoros[i];
+    meteoro.x += meteoro.vx;
+    meteoro.y += meteoro.vy;
+    meteoro.vy += 0.08;
+
+    if (colisao(joao, meteoro)) {
+      mostrarAviso("Meteoro de lava! Sem descanso depois da fase 6.");
+      tocarSom("dano");
+      tremor = 26;
+      criarParticulas(joao.x + joao.w / 2, joao.y + joao.h / 2, "#ff6b00", 36);
+      resetarPersonagens();
+      return;
+    }
+
+    if (meteoro.y > canvas.height + 40) meteoros.splice(i, 1);
+  }
 }
 
 function tratarColisaoVilao(jogador, vilao) {
@@ -1568,7 +1971,7 @@ function tratarColisaoVilao(jogador, vilao) {
 
   const veioDeCima = jogador.velY > 0 && jogador.prevY + jogador.h <= vilao.y + 14;
 
-  const ehChefe = vilao.tipo === "chefe" || vilao.tipo === "rei";
+  const ehChefe = ehChefeVilao(vilao);
 
   if (ehChefe && veioDeCima && vilao.invencivel <= 0) {
     vilao.vida--;
@@ -1745,7 +2148,7 @@ function verificarPortal() {
   const fase = fases[faseAtual];
 
   if (colisao(joao, fase.portal)) {
-    const chefeVivo = fase.inimigos.some(i => (i.tipo === "chefe" || i.tipo === "rei") && !i.morto);
+    const chefeVivo = fase.inimigos.some(i => ehChefeVilao(i) && !i.morto);
 
     if (chefeVivo) {
       mostrarAviso("Derrote o rei antes de abrir o portal!");
@@ -1761,6 +2164,7 @@ function verificarPortal() {
     } else {
       mensagem.innerText = fases[faseAtual].nome;
       bannerFase = 160;
+      resetarTimerChefe();
       tocarSom("portal");
       criarParticulas(fase.portal.x + 28, fase.portal.y + 30, "#c77dff", 26);
       resetarPersonagens();
@@ -1786,6 +2190,16 @@ function telaVitoria() {
   ctx.fillText("Moedas coletadas: " + moedas, 326, 278);
   ctx.fillText("Yoshis resgatados: " + yoshis + "/" + fases.length, 332, 314);
   ctx.fillText("Clique em Reiniciar para jogar de novo.", 248, 392);
+}
+
+function telaGameOver() {
+  desenharFundo(fases[faseAtual]);
+  fases[faseAtual].plataformas.forEach(desenharPlataforma);
+  desenharPainelCentral("GAME OVER", [
+    "O vilao nao foi derrotado em 6 segundos",
+    "Pressione ENTER ou clique em Reiniciar",
+    "Neymar dispara poder pela muleta automaticamente"
+  ], "#ef476f");
 }
 
 function desenharPainelCentral(titulo, linhas, cor = "#f7c948") {
@@ -1858,10 +2272,13 @@ function reiniciarJogo() {
   moedas = 0;
   yoshis = 0;
   venceu = false;
+  gameOver = false;
   jogoIniciado = true;
   pausado = false;
   aviso = "";
   avisoTempo = 0;
+  resetarTimerChefe();
+  poderes.length = 0;
   bannerFase = 160;
 
   fases.forEach(fase => {
@@ -1875,11 +2292,7 @@ function reiniciarJogo() {
     if (fase.miaw) fase.miaw.salvo = false;
     fase.inimigos.forEach(i => {
       i.morto = false;
-      if (i.tipo === "chefe") {
-        i.vida = i.vidaMax;
-        i.invencivel = 0;
-      }
-      if (i.tipo === "rei") {
+      if (ehChefeVilao(i)) {
         i.vida = i.vidaMax;
         i.invencivel = 0;
       }
@@ -1919,9 +2332,23 @@ function loop() {
     return;
   }
 
+  if (gameOver) {
+    telaGameOver();
+    requestAnimationFrame(loop);
+    return;
+  }
+
   moverPersonagem(joao, ["a", "ArrowLeft"], ["d", "ArrowRight"], ["w", "ArrowUp"]);
 
+  atualizarPoderNeymar();
   atualizarInimigos();
+  atualizarPoderes();
+  atualizarTimerChefe();
+  if (gameOver) {
+    requestAnimationFrame(loop);
+    return;
+  }
+  atualizarMeteoros();
   tocarLava(joao);
   coletarMoedas();
   comerCogumelos();
