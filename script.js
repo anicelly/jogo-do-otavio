@@ -24,10 +24,10 @@ let personagemAtual = "joao";
 const particulas = [];
 const meteoros = [];
 const poderes = [];
-const AJUSTE_VELOCIDADE_JOGAVEL = 0.93;
-const AJUSTE_MESSI_JOGAVEL = 0.8;
-const AJUSTE_METEORO_JOGAVEL = 0.78;
-const AJUSTE_PODER_VILAO_JOGAVEL = 0.86;
+const AJUSTE_VELOCIDADE_JOGAVEL = 0.78;
+const AJUSTE_MESSI_JOGAVEL = 0.65;
+const AJUSTE_METEORO_JOGAVEL = 0.62;
+const AJUSTE_PODER_VILAO_JOGAVEL = 0.7;
 let chefeTimer = null;
 let chefeTimerAtivo = false;
 let chefeTimerAlvo = null;
@@ -2116,7 +2116,7 @@ function atualizarInimigos() {
 }
 
 function tentarDisparoVilao(vilao, indice) {
-  const intervalo = Math.max(42, 104 - faseAtual * 4);
+  const intervalo = Math.max(60, 136 - faseAtual * 5);
   if ((frame + indice * 17) % intervalo !== 0) return;
 
   const centroVilaoX = vilao.x + vilao.w / 2;
@@ -2304,7 +2304,7 @@ function atualizarMeteoros() {
     return;
   }
 
-  const intervalo = Math.max(24, 58 - faseAtual * 5);
+  const intervalo = Math.max(42, 86 - faseAtual * 4);
   if (frame % intervalo === 0) criarMeteoro();
 
   for (let i = meteoros.length - 1; i >= 0; i--) {
