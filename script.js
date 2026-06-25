@@ -25,10 +25,14 @@ const particulas = [];
 const meteoros = [];
 const poderes = [];
 const AJUSTE_VELOCIDADE_JOGAVEL = 0.93;
+const AJUSTE_MESSI_JOGAVEL = 0.8;
+const AJUSTE_METEORO_JOGAVEL = 0.78;
+const AJUSTE_PODER_VILAO_JOGAVEL = 0.86;
 let chefeTimer = null;
 let chefeTimerAtivo = false;
 let chefeTimerAlvo = null;
 let poderNeymarCooldown = 0;
+let genkiDamaCooldown = 0;
 const botaoSom = document.getElementById("botaoSom");
 const activePlayerLabel = document.getElementById("activePlayerLabel");
 const deviceMode = document.getElementById("deviceMode");
@@ -565,6 +569,7 @@ function criarJogador(nome, x, corCamisa, corCalca, cabelo) {
     montado: false,
     grande: false,
     poderTempo: 0,
+    nuvem: false,
     agachado: false,
     alturaNormal: 58,
     alturaAgachado: 38
@@ -863,6 +868,7 @@ function resetarPersonagens() {
   meteoros.length = 0;
   poderes.length = 0;
   poderNeymarCooldown = 0;
+  genkiDamaCooldown = 0;
 
   joao.x = 52;
   joao.y = 422;
@@ -872,6 +878,8 @@ function resetarPersonagens() {
   joao.montado = false;
   joao.grande = false;
   joao.poderTempo = 0;
+  joao.nuvem = false;
+  joao.superSayajin = false;
   joao.agachado = false;
   joao.h = joao.alturaNormal;
 
@@ -917,22 +925,22 @@ function moverPersonagem(p, esquerda, direita, pulo) {
   p.andando = false;
   const querAbaixar = teclaAtiva(["s", "ArrowDown"]);
 
-  if (querAbaixar && !p.agachado && !p.montado) {
+  if (querAbaixar && !p.agachado && !p.montado && !p.nuvem) {
     p.y += p.h - p.alturaAgachado;
     p.h = p.alturaAgachado;
     p.agachado = true;
   }
 
-  if ((!querAbaixar || p.montado) && p.agachado) {
+  if ((!querAbaixar || p.montado || p.nuvem) && p.agachado) {
     p.y -= p.alturaNormal - p.h;
     p.h = p.alturaNormal;
     p.agachado = false;
   }
 
-  const velocidadeBase = (p.montado ? 5.35 : 4.35) + (p.grande ? 0.45 : 0);
+  const velocidadeBase = (p.nuvem ? 5.5 : p.montado ? 5.35 : 4.35) + (p.grande ? 0.45 : 0);
   const velocidade = p.agachado ? velocidadeBase * 0.58 : velocidadeBase;
-  const forcaPulo = (p.montado ? -15.2 : -13.2) - (p.grande ? 0.8 : 0);
-  const gravidade = p.montado ? 0.58 : 0.64;
+  const forcaPulo = (p.nuvem ? -9.2 : p.montado ? -15.2 : -13.2) - (p.grande ? 0.8 : 0);
+  const gravidade = p.nuvem ? 0.28 : p.montado ? 0.58 : 0.64;
 
   if (teclaAtiva(esquerda)) {
     p.velX = -velocidade;
@@ -946,7 +954,10 @@ function moverPersonagem(p, esquerda, direita, pulo) {
     p.direcao = 1;
   }
 
-  if (teclaAtiva(pulo) && p.noChao) {
+  if (p.nuvem && teclaAtiva(pulo)) {
+    p.velY = Math.max(p.velY - 0.9, -6.8);
+    p.noChao = false;
+  } else if (teclaAtiva(pulo) && p.noChao) {
     p.velY = forcaPulo;
     p.noChao = false;
     tocarSom("pulo");
@@ -1257,7 +1268,7 @@ function desenharBoneco(p) {
 
   if (p.avatar === "goku") {
     desenharGokuNuvemDourada(p);
-    desenharEtiqueta(p.agachado ? "Goku abaixado" : "Goku na nuvem", p.x + p.w / 2, p.y - 10);
+    desenharEtiqueta(p.nuvem ? "Super Goku na nuvem" : "Goku", p.x + p.w / 2, p.y - 10);
     return;
   }
 
@@ -1413,21 +1424,17 @@ function desenharGokuNuvemDourada(p) {
     ctx.translate(p.x, baseY);
   }
 
-  ctx.fillStyle = "rgba(0, 0, 0, 0.24)";
-  ctx.fillRect(-4, 56 + bob, 48, 6);
-
-  ctx.fillStyle = "#f7c948";
-  ctx.fillRect(-8, 42 + bob, 52, 16);
-  ctx.fillRect(0, 34 + bob, 38, 18);
-  ctx.fillRect(18, 30 + bob, 30, 16);
-  ctx.fillStyle = "#ffe066";
-  ctx.fillRect(-2, 37 + bob, 30, 10);
-  ctx.fillRect(24, 34 + bob, 20, 9);
+  if (p.nuvem) {
+    desenharNuvemDouradaPixel(-8, 34 + bob);
+  } else {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.24)";
+    ctx.fillRect(0, 56, 34, 5);
+  }
 
   const corpoY = p.agachado ? 10 : 0;
   ctx.fillStyle = "#f1c27d";
   ctx.fillRect(8, 4 + corpoY, 22, 19);
-  ctx.fillStyle = "#111111";
+  ctx.fillStyle = p.superSayajin ? "#ffd43b" : "#111111";
   ctx.fillRect(4, -2 + corpoY, 9, 12);
   ctx.fillRect(12, -7 + corpoY, 8, 13);
   ctx.fillRect(21, -3 + corpoY, 10, 12);
@@ -1446,6 +1453,35 @@ function desenharGokuNuvemDourada(p) {
   ctx.fillRect(21, 54 + corpoY, 11, 4);
 
   ctx.restore();
+}
+
+function nuvemGokuDaFase(fase) {
+  return {
+    x: Math.min(172, fase.portal.x - 180),
+    y: 414,
+    w: 66,
+    h: 34
+  };
+}
+
+function desenharNuvemDouradaPixel(x, y) {
+  ctx.fillStyle = "rgba(0, 0, 0, 0.24)";
+  ctx.fillRect(x + 4, y + 28, 52, 6);
+  ctx.fillStyle = "#f7c948";
+  ctx.fillRect(x, y + 16, 52, 16);
+  ctx.fillRect(x + 8, y + 8, 38, 18);
+  ctx.fillRect(x + 26, y + 4, 30, 16);
+  ctx.fillStyle = "#ffe066";
+  ctx.fillRect(x + 6, y + 11, 30, 10);
+  ctx.fillRect(x + 30, y + 8, 20, 9);
+}
+
+function desenharNuvemGokuSolta(fase) {
+  if (joao.avatar !== "goku" || joao.nuvem) return;
+  const nuvem = nuvemGokuDaFase(fase);
+  const bob = Math.sin(frame / 12) * 2;
+  desenharNuvemDouradaPixel(nuvem.x, nuvem.y + bob);
+  desenharEtiqueta("Nuvem", nuvem.x + nuvem.w / 2, nuvem.y - 6);
 }
 
 function desenharEtiqueta(texto, x, y) {
@@ -2003,7 +2039,7 @@ function desenharHUD(fase) {
 
   ctx.fillStyle = "#9fb3c8";
   ctx.font = "13px monospace";
-  ctx.fillText("Fase " + (faseAtual + 1) + "/" + fases.length + "  |  P: pausar  |  Neymar atira com a muleta", 30, 92);
+  ctx.fillText("Fase " + (faseAtual + 1) + "/" + fases.length + "  |  Goku voa na nuvem e solta Genki Dama", 30, 92);
 
   if (chefeTimerAtivo && chefeTimer !== null) {
     const segundos = Math.max(0, Math.ceil(chefeTimer / 60));
@@ -2041,6 +2077,7 @@ function desenharFase() {
   if (fase.princesa) desenharPrincesa(fase.princesa);
   if (fase.cr7) desenharCR7Aliado(fase.cr7);
   if (fase.miaw) desenharMiawEletrico(fase.miaw);
+  desenharNuvemGokuSolta(fase);
   desenharYoshi(fase.yoshi);
 
   fase.moedas.forEach(m => {
@@ -2064,7 +2101,8 @@ function atualizarInimigos() {
     if (i.morto) return;
     if (i.invencivel > 0) i.invencivel--;
 
-    i.x += i.vel * multiplicador * AJUSTE_VELOCIDADE_JOGAVEL;
+    const ajusteVilao = i.tipo === "messi" ? AJUSTE_MESSI_JOGAVEL : 1;
+    i.x += i.vel * multiplicador * AJUSTE_VELOCIDADE_JOGAVEL * ajusteVilao;
 
     if (i.x <= i.min || i.x >= i.max) {
       i.vel *= -1;
@@ -2088,17 +2126,24 @@ function tentarDisparoVilao(vilao, indice) {
   const dx = centroJoaoX - centroVilaoX;
   const dy = centroJoaoY - centroVilaoY;
   const distancia = Math.max(1, Math.hypot(dx, dy));
-  const velocidade = (2.7 + faseAtual * 0.14 + (ehChefeVilao(vilao) ? 0.85 : 0)) * AJUSTE_VELOCIDADE_JOGAVEL;
+  const ehMessi = vilao.tipo === "messi";
+  const velocidade =
+    (2.7 + faseAtual * 0.14 + (ehChefeVilao(vilao) ? 0.85 : 0)) *
+    AJUSTE_VELOCIDADE_JOGAVEL *
+    AJUSTE_PODER_VILAO_JOGAVEL *
+    (ehMessi ? AJUSTE_MESSI_JOGAVEL : 1);
 
   poderes.push({
     dono: "vilao",
+    tipo: ehMessi ? "bolaOuro" : "poderVilao",
+    nome: ehMessi ? "bola de ouro do Messi" : "poder do vilao",
     x: centroVilaoX,
     y: centroVilaoY,
-    w: ehChefeVilao(vilao) ? 18 : 14,
-    h: ehChefeVilao(vilao) ? 18 : 14,
+    w: ehMessi ? 18 : ehChefeVilao(vilao) ? 18 : 14,
+    h: ehMessi ? 18 : ehChefeVilao(vilao) ? 18 : 14,
     vx: (dx / distancia) * velocidade,
     vy: (dy / distancia) * velocidade,
-    cor: ehChefeVilao(vilao) ? "#ff0054" : "#c77dff",
+    cor: ehMessi ? "#ffd43b" : ehChefeVilao(vilao) ? "#ff0054" : "#c77dff",
     vida: 160
   });
 }
@@ -2121,10 +2166,37 @@ function dispararPoderNeymar() {
   tocarSom("gol");
 }
 
+function dispararGenkiDama() {
+  if (joao.avatar !== "goku" || !joao.nuvem || genkiDamaCooldown > 0 || gameOver || venceu) return;
+
+  genkiDamaCooldown = 58;
+  poderes.push({
+    dono: "goku",
+    tipo: "genkiDama",
+    nome: "Genki Dama",
+    x: joao.x + joao.w / 2 + joao.direcao * 18,
+    y: joao.y + 10,
+    w: 26,
+    h: 26,
+    vx: joao.direcao * 6.4,
+    vy: -0.08,
+    cor: "#74c0fc",
+    vida: 95
+  });
+  tocarSom("portal");
+}
+
 function atualizarPoderNeymar() {
   if (poderNeymarCooldown > 0) poderNeymarCooldown--;
   if (joao.avatar === "neymar" && jogoIniciado && !pausado && !gameOver && frame % 36 === 0) {
     dispararPoderNeymar();
+  }
+}
+
+function atualizarPoderGoku() {
+  if (genkiDamaCooldown > 0) genkiDamaCooldown--;
+  if (joao.avatar === "goku" && joao.nuvem && jogoIniciado && !pausado && !gameOver && frame % 62 === 0) {
+    dispararGenkiDama();
   }
 }
 
@@ -2136,7 +2208,7 @@ function atualizarPoderes() {
     poder.vida--;
 
     if (poder.dono === "vilao" && joao.invencivel <= 0 && colisao(joao, poder)) {
-      mostrarAviso("Poder do vilao acertou!");
+      mostrarAviso((poder.nome || "Poder do vilao") + " acertou!");
       tocarSom("dano");
       tremor = 18;
       criarParticulas(joao.x + joao.w / 2, joao.y + joao.h / 2, poder.cor, 22);
@@ -2144,24 +2216,25 @@ function atualizarPoderes() {
       return;
     }
 
-    if (poder.dono === "neymar") {
+    if (poder.dono === "neymar" || poder.dono === "goku") {
       const alvo = fases[faseAtual].inimigos.find(i => !i.morto && colisao(i, poder));
       if (alvo) {
+        const dano = poder.dono === "goku" ? 2 : 1;
         if (ehChefeVilao(alvo)) {
-          alvo.vida--;
+          alvo.vida -= dano;
           alvo.invencivel = 18;
           if (alvo.vida <= 0) {
             alvo.morto = true;
             tocarSom("vitoria");
-            mostrarAviso("Muleta poderosa derrotou " + (alvo.nome || "o chefe") + "!");
+            mostrarAviso((poder.nome || "Poder") + " derrotou " + (alvo.nome || "o chefe") + "!");
           } else {
-            mostrarAviso("Muleta acertou! Vida: " + alvo.vida + "/" + alvo.vidaMax);
+            mostrarAviso((poder.nome || "Poder") + " acertou! Vida: " + alvo.vida + "/" + alvo.vidaMax);
           }
         } else {
           alvo.morto = true;
-          mostrarAviso("Neymar derrubou um vilao com a muleta!");
+          mostrarAviso((poder.nome || "Poder") + " derrubou um vilao!");
         }
-        criarParticulas(poder.x, poder.y, "#ffe066", 20);
+        criarParticulas(poder.x, poder.y, poder.dono === "goku" ? "#74c0fc" : "#ffe066", 20);
         poderes.splice(p, 1);
         continue;
       }
@@ -2181,6 +2254,28 @@ function atualizarPoderes() {
 
 function desenharPoderes() {
   poderes.forEach(poder => {
+    if (poder.tipo === "bolaOuro") {
+      ctx.fillStyle = "rgba(255, 212, 59, 0.28)";
+      ctx.fillRect(poder.x - 5, poder.y - 5, poder.w + 10, poder.h + 10);
+      ctx.fillStyle = "#9f6800";
+      ctx.fillRect(poder.x, poder.y, poder.w, poder.h);
+      ctx.fillStyle = "#ffd43b";
+      ctx.fillRect(poder.x + 2, poder.y + 2, poder.w - 4, poder.h - 4);
+      ctx.fillStyle = "#fff3bf";
+      ctx.fillRect(poder.x + 5, poder.y + 4, 5, 5);
+      return;
+    }
+
+    if (poder.tipo === "genkiDama") {
+      ctx.fillStyle = "rgba(116, 192, 252, 0.32)";
+      ctx.fillRect(poder.x - 7, poder.y - 7, poder.w + 14, poder.h + 14);
+      ctx.fillStyle = "#4dabf7";
+      ctx.fillRect(poder.x, poder.y, poder.w, poder.h);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(poder.x + 5, poder.y + 5, poder.w - 10, poder.h - 10);
+      return;
+    }
+
     ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
     ctx.fillRect(poder.x - 3, poder.y - 3, poder.w + 6, poder.h + 6);
     ctx.fillStyle = poder.cor;
@@ -2214,9 +2309,9 @@ function atualizarMeteoros() {
 
   for (let i = meteoros.length - 1; i >= 0; i--) {
     const meteoro = meteoros[i];
-    meteoro.x += meteoro.vx * AJUSTE_VELOCIDADE_JOGAVEL;
-    meteoro.y += meteoro.vy * AJUSTE_VELOCIDADE_JOGAVEL;
-    meteoro.vy += 0.08;
+    meteoro.x += meteoro.vx * AJUSTE_VELOCIDADE_JOGAVEL * AJUSTE_METEORO_JOGAVEL;
+    meteoro.y += meteoro.vy * AJUSTE_VELOCIDADE_JOGAVEL * AJUSTE_METEORO_JOGAVEL;
+    meteoro.vy += 0.055;
 
     if (colisao(joao, meteoro)) {
       mostrarAviso("Meteoro de lava! Sem descanso depois da fase 6.");
@@ -2393,6 +2488,23 @@ function coletarAliadosEspeciais() {
       criarParticulas(fase.miaw.x + 22, fase.miaw.y + 26, "#ffd43b", 42);
       mostrarAviso("Miaw eletrico: miau!");
     }
+  }
+}
+
+function montarNuvemGoku() {
+  const fase = fases[faseAtual];
+  if (joao.avatar !== "goku" || joao.nuvem) return;
+
+  const nuvem = nuvemGokuDaFase(fase);
+  const box = { x: nuvem.x, y: nuvem.y, w: nuvem.w, h: nuvem.h };
+
+  if (colisao(joao, box)) {
+    joao.nuvem = true;
+    joao.superSayajin = true;
+    joao.invencivel = Math.max(joao.invencivel, 120);
+    tocarSom("vitoria");
+    criarParticulas(nuvem.x + nuvem.w / 2, nuvem.y + 16, "#ffd43b", 44);
+    mostrarAviso("Goku subiu na nuvem e virou Super Sayajin!");
   }
 }
 
@@ -2623,6 +2735,7 @@ function loop() {
   moverPersonagem(joao, ["a", "ArrowLeft"], ["d", "ArrowRight"], ["w", "ArrowUp"]);
 
   atualizarPoderNeymar();
+  atualizarPoderGoku();
   atualizarInimigos();
   atualizarPoderes();
   atualizarTimerChefe();
@@ -2637,6 +2750,7 @@ function loop() {
   comerCogumelos();
   salvarYoshi();
   coletarAliadosEspeciais();
+  montarNuvemGoku();
   verificarPortal();
   if (venceu) {
     requestAnimationFrame(loop);
