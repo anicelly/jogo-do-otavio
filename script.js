@@ -688,8 +688,8 @@ function atualizarTimerChefe() {
 
     chefeTimerAlvo = alvo;
     chefeTimerAtivo = true;
-    chefeTimer = 900;
-    mostrarAviso("Derrote " + (alvo.nome || "o chefe") + " em 15 segundos!");
+    chefeTimer = 1200;
+    mostrarAviso("Derrote " + (alvo.nome || "o chefe") + " em 20 segundos!");
   }
 
   if (!chefeTimerAlvo || chefeTimerAlvo.morto) {
@@ -2588,7 +2588,7 @@ function telaGameOver() {
   desenharFundo(fases[faseAtual]);
   fases[faseAtual].plataformas.forEach(desenharPlataforma);
   desenharPainelCentral("GAME OVER", [
-    "O vilao nao foi derrotado em 15 segundos",
+    "O vilao nao foi derrotado em 20 segundos",
     "Pressione ENTER ou clique em Reiniciar",
     "Neymar dispara poder pela muleta automaticamente"
   ], "#ef476f");
