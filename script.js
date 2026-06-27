@@ -34,6 +34,8 @@ let chefeTimerAtivo = false;
 let chefeTimerAlvo = null;
 let poderNeymarCooldown = 0;
 let genkiDamaCooldown = 0;
+let poderRobloxCooldown = 0;
+let proximoPoderRoblox = "celular";
 const botaoSom = document.getElementById("botaoSom");
 const activePlayerLabel = document.getElementById("activePlayerLabel");
 const deviceMode = document.getElementById("deviceMode");
@@ -145,7 +147,8 @@ const personagensDisponiveis = {
   lobo: { nome: "Lobo", camisa: "#6c757d", calca: "#2b2d42", cabelo: "#495057", avatar: "lobo", numero: "" },
   miaw: { nome: "Miaw", camisa: "#ffd43b", calca: "#fff3bf", cabelo: "#ffd43b", avatar: "miaw", numero: "" },
   neymar: { nome: "Neymar", camisa: "#ffe066", calca: "#2457c5", cabelo: "#f7c948", avatar: "neymar", numero: "10" },
-  goku: { nome: "Goku", camisa: "#ff7b00", calca: "#0b5ed7", cabelo: "#111111", avatar: "goku", numero: "" }
+  goku: { nome: "Goku", camisa: "#ff7b00", calca: "#0b5ed7", cabelo: "#111111", avatar: "goku", numero: "" },
+  meninoRoblox: { nome: "Menino Roblox", camisa: "#e03131", calca: "#1971c2", cabelo: "#5c2e12", avatar: "meninoRoblox", numero: "R" }
 };
 
 function selecionarPersonagem(id) {
@@ -900,6 +903,8 @@ function resetarPersonagens() {
   poderes.length = 0;
   poderNeymarCooldown = 0;
   genkiDamaCooldown = 0;
+  poderRobloxCooldown = 0;
+  proximoPoderRoblox = "celular";
 
   joao.x = 52;
   joao.y = 422;
@@ -1312,6 +1317,15 @@ function desenharBoneco(p) {
   if (p.avatar === "goku") {
     desenharGokuNuvemDourada(p);
     desenharEtiqueta(p.nuvem ? "Super Goku na nuvem" : "Goku", p.x + p.w / 2, p.y - 10);
+    return;
+  }
+
+  if (p.avatar === "meninoRoblox") {
+    ctx.save();
+    ctx.translate(p.x + p.w / 2, p.y + p.h);
+    ctx.scale(ESCALA_VISUAL_PLAYER, ESCALA_VISUAL_PLAYER);
+    desenharMeninoRoblox({ x: -23, y: -58, w: 46, h: 58, direcao: p.direcao, morto: false });
+    ctx.restore();
     return;
   }
 
@@ -2296,6 +2310,35 @@ function atualizarPoderGoku() {
   }
 }
 
+function dispararPoderRoblox() {
+  if (joao.avatar !== "meninoRoblox" || poderRobloxCooldown > 0 || gameOver || venceu) return;
+
+  const placa = proximoPoderRoblox === "placaInjustica";
+  poderRobloxCooldown = placa ? 105 : 62;
+  poderes.push({
+    dono: "robloxPlayer",
+    tipo: proximoPoderRoblox,
+    nome: placa ? "Placa QUEREMOS INJUSTICA" : "Celular Roblox",
+    x: joao.x + joao.w / 2 + joao.direcao * 18,
+    y: placa ? joao.y + 2 : joao.y + 18,
+    w: placa ? 150 : 18,
+    h: placa ? 48 : 28,
+    vx: joao.direcao * (placa ? 3.1 : 6.2),
+    vy: 0,
+    cor: placa ? "#f7f3de" : "#74c0fc",
+    vida: placa ? 150 : 95
+  });
+  proximoPoderRoblox = placa ? "celular" : "placaInjustica";
+  tocarSom(placa ? "portal" : "gol");
+}
+
+function atualizarPoderRoblox() {
+  if (poderRobloxCooldown > 0) poderRobloxCooldown--;
+  if (joao.avatar === "meninoRoblox" && jogoIniciado && !pausado && !gameOver && frame % 66 === 0) {
+    dispararPoderRoblox();
+  }
+}
+
 function atualizarPoderes() {
   for (let p = poderes.length - 1; p >= 0; p--) {
     const poder = poderes[p];
@@ -2312,7 +2355,7 @@ function atualizarPoderes() {
       return;
     }
 
-    if (poder.dono === "neymar" || poder.dono === "goku") {
+    if (poder.dono === "neymar" || poder.dono === "goku" || poder.dono === "robloxPlayer") {
       const alvo = fases[faseAtual].inimigos.find(i => !i.morto && colisao(i, poder));
       if (alvo) {
         const dano = poder.dono === "goku" ? 2 : 1;
@@ -2330,7 +2373,8 @@ function atualizarPoderes() {
           alvo.morto = true;
           mostrarAviso((poder.nome || "Poder") + " derrubou um vilao!");
         }
-        criarParticulas(poder.x, poder.y, poder.dono === "goku" ? "#74c0fc" : "#ffe066", 20);
+        const corImpacto = poder.dono === "goku" ? "#74c0fc" : poder.dono === "robloxPlayer" ? "#e03131" : "#ffe066";
+        criarParticulas(poder.x, poder.y, corImpacto, 20);
         poderes.splice(p, 1);
         continue;
       }
@@ -2861,6 +2905,7 @@ function loop() {
 
   atualizarPoderNeymar();
   atualizarPoderGoku();
+  atualizarPoderRoblox();
   atualizarInimigos();
   atualizarPoderes();
   atualizarTimerChefe();
