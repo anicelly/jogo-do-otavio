@@ -11,6 +11,11 @@ musicaGokuArquivo.loop = true;
 musicaGokuArquivo.preload = "auto";
 musicaGokuArquivo.volume = 0.58;
 
+const musicaNeymarArquivo = new Audio("assets/neymar-theme.mp3");
+musicaNeymarArquivo.loop = true;
+musicaNeymarArquivo.preload = "auto";
+musicaNeymarArquivo.volume = 0.58;
+
 const keys = {};
 let faseAtual = 0;
 let moedas = 0;
@@ -173,6 +178,7 @@ function selecionarPersonagem(id) {
   joao.avatar = escolhido.avatar;
   joao.numero = escolhido.numero;
   sincronizarMusicaGoku(true);
+  sincronizarMusicaNeymar(true);
 
   if (activePlayerLabel) {
     activePlayerLabel.innerText = "Personagem: " + escolhido.nome;
@@ -775,6 +781,7 @@ function alternarSom() {
     tocarSom("portal");
   }
   sincronizarMusicaGoku(false);
+  sincronizarMusicaNeymar(false);
 }
 
 function sincronizarMusicaGoku(reiniciarAoSair = false) {
@@ -791,6 +798,22 @@ function sincronizarMusicaGoku(reiniciarAoSair = false) {
 
   musicaGokuArquivo.pause();
   if (reiniciarAoSair) musicaGokuArquivo.currentTime = 0;
+}
+
+function sincronizarMusicaNeymar(reiniciarAoSair = false) {
+  const deveTocar = somLigado && joao.avatar === "neymar" && !venceu && !gameOver;
+
+  if (deveTocar) {
+    if (musicaNeymarArquivo.paused) {
+      musicaNeymarArquivo.play().catch(() => {
+        // O navegador libera o audio na proxima interacao do jogador.
+      });
+    }
+    return;
+  }
+
+  musicaNeymarArquivo.pause();
+  if (reiniciarAoSair) musicaNeymarArquivo.currentTime = 0;
 }
 
 function tocarTom(freq, duracao, tipo, volume, atraso = 0) {
@@ -860,27 +883,24 @@ function tocarSom(nome) {
 }
 
 function tocarMusica() {
-  if (!somLigado || venceu) return;
+  if (!somLigado || venceu || gameOver) {
+    sincronizarMusicaGoku(false);
+    sincronizarMusicaNeymar(false);
+    return;
+  }
 
   if (joao.avatar === "goku") {
     sincronizarMusicaGoku(false);
     return;
   }
 
-  musicaTimer--;
-  if (musicaTimer > 0) return;
-
   if (joao.avatar === "neymar") {
-    const baixoFunk = [82, 82, 110, 98, 82, 123, 98, 73];
-    const toqueNeymarGol = [392, 523, 659, 523, 392, 659, 784, 659];
-    tocarTom(baixoFunk[notaMusica % baixoFunk.length], 0.13, "sawtooth", 0.062);
-    tocarTom(toqueNeymarGol[notaMusica % toqueNeymarGol.length], 0.08, "square", 0.034, 0.035);
-    if (notaMusica % 2 === 0) tocarTom(150, 0.05, "square", 0.045);
-    if (notaMusica % 4 === 2) tocarTom(900, 0.035, "triangle", 0.027);
-    notaMusica++;
-    musicaTimer = 9;
+    sincronizarMusicaNeymar(false);
     return;
   }
+
+  musicaTimer--;
+  if (musicaTimer > 0) return;
 
   const temVilaoVivo = jogoIniciado && fases[faseAtual].inimigos.some(i => !i.morto);
   if (temVilaoVivo) {
