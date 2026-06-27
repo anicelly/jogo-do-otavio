@@ -28,6 +28,7 @@ const AJUSTE_VELOCIDADE_JOGAVEL = 0.78;
 const AJUSTE_MESSI_JOGAVEL = 0.65;
 const AJUSTE_METEORO_JOGAVEL = 0.62;
 const AJUSTE_PODER_VILAO_JOGAVEL = 0.7;
+const ESCALA_VISUAL_PLAYER = 1.14;
 let chefeTimer = null;
 let chefeTimerAtivo = false;
 let chefeTimerAlvo = null;
@@ -150,6 +151,8 @@ const personagensDisponiveis = {
 function selecionarPersonagem(id) {
   const escolhido = personagensDisponiveis[id] || personagensDisponiveis.joao;
   personagemAtual = id;
+  musicaTimer = 0;
+  notaMusica = 0;
   joao.nome = escolhido.nome;
   joao.corCamisa = escolhido.camisa;
   joao.corCalca = escolhido.calca;
@@ -166,7 +169,7 @@ selecionarPersonagem("joao");
 
 const fases = [
   {
-    nome: "Fase 1 - Bosque do Yoshi",
+    nome: "Fase 1 - Menino do Roblox",
     fundo: ["#77c8ff", "#9ee493"],
     tema: "floresta",
     plataformas: [
@@ -186,7 +189,7 @@ const fases = [
       { x: 314, y: 354, coletado: false }
     ],
     inimigos: [
-      criarVilao("soldado", 416, 438, 2.1, 380, 610)
+      criarVilao("meninoRoblox", 416, 428, 1.65, 360, 650)
     ]
   },
   {
@@ -570,6 +573,7 @@ function criarJogador(nome, x, corCamisa, corCalca, cabelo) {
     grande: false,
     poderTempo: 0,
     nuvem: false,
+    superSayajin: false,
     agachado: false,
     alturaNormal: 58,
     alturaAgachado: 38
@@ -580,7 +584,8 @@ function criarVilao(tipo, x, y, vel, min, max) {
   const medidas = {
     cavaleiro: { w: 48, h: 50 },
     messi: { w: 42, h: 58 },
-    lobo: { w: 58, h: 38 }
+    lobo: { w: 58, h: 38 },
+    meninoRoblox: { w: 46, h: 58 }
   };
   const medida = medidas[tipo] || { w: 42, h: 42 };
 
@@ -797,6 +802,32 @@ function tocarMusica() {
   if (!somLigado || venceu) return;
   musicaTimer--;
   if (musicaTimer > 0) return;
+
+  if (joao.avatar === "goku") {
+    const melodiaGoku = [659, 784, 880, 988, 880, 784, 659, 587, 659, 880, 1046, 1175, 1046, 880, 784, 659];
+    const baixoGoku = [165, 196, 220, 247, 196, 220, 147, 165];
+    const energiaGoku = [1318, 1175, 1046, 988];
+    tocarTom(melodiaGoku[notaMusica % melodiaGoku.length], 0.12, "square", 0.052);
+    tocarTom(baixoGoku[Math.floor(notaMusica / 2) % baixoGoku.length], 0.18, "triangle", 0.032);
+    if (notaMusica % 4 === 0) {
+      tocarTom(energiaGoku[Math.floor(notaMusica / 4) % energiaGoku.length], 0.09, "sawtooth", 0.022, 0.04);
+    }
+    notaMusica++;
+    musicaTimer = 11;
+    return;
+  }
+
+  if (joao.avatar === "neymar") {
+    const baixoFunk = [82, 82, 110, 98, 82, 123, 98, 73];
+    const toqueNeymarGol = [392, 523, 659, 523, 392, 659, 784, 659];
+    tocarTom(baixoFunk[notaMusica % baixoFunk.length], 0.13, "sawtooth", 0.062);
+    tocarTom(toqueNeymarGol[notaMusica % toqueNeymarGol.length], 0.08, "square", 0.034, 0.035);
+    if (notaMusica % 2 === 0) tocarTom(150, 0.05, "square", 0.045);
+    if (notaMusica % 4 === 2) tocarTom(900, 0.035, "triangle", 0.027);
+    notaMusica++;
+    musicaTimer = 9;
+    return;
+  }
 
   const temVilaoVivo = jogoIniciado && fases[faseAtual].inimigos.some(i => !i.morto);
   if (temVilaoVivo) {
@@ -1243,19 +1274,31 @@ function desenharBoneco(p) {
   if (piscando) return;
 
   if (p.avatar === "yoshi") {
-    desenharSpriteYoshi(p.x - 14, p.y + 4, p.direcao, true);
+    ctx.save();
+    ctx.translate(p.x + p.w / 2, p.y + p.h);
+    ctx.scale(ESCALA_VISUAL_PLAYER, ESCALA_VISUAL_PLAYER);
+    desenharSpriteYoshi(-31, -54, p.direcao, true);
+    ctx.restore();
     desenharEtiqueta(p.nome, p.x + p.w / 2, p.y - 10);
     return;
   }
 
   if (p.avatar === "lobo") {
-    desenharSpriteLobo({ x: p.x - 8, y: p.y + 18, w: 58, h: 38, direcao: p.direcao });
+    ctx.save();
+    ctx.translate(p.x + p.w / 2, p.y + p.h);
+    ctx.scale(ESCALA_VISUAL_PLAYER, ESCALA_VISUAL_PLAYER);
+    desenharSpriteLobo({ x: -29, y: -40, w: 58, h: 38, direcao: p.direcao });
+    ctx.restore();
     desenharEtiqueta(p.nome, p.x + p.w / 2, p.y - 10);
     return;
   }
 
   if (p.avatar === "miaw") {
-    desenharMiawEletrico({ x: p.x - 6, y: p.y + 6, salvo: false, player: true }, p.direcao);
+    ctx.save();
+    ctx.translate(p.x + p.w / 2, p.y + p.h);
+    ctx.scale(ESCALA_VISUAL_PLAYER, ESCALA_VISUAL_PLAYER);
+    desenharMiawEletrico({ x: -24, y: -56, salvo: false, player: true }, p.direcao);
+    ctx.restore();
     desenharEtiqueta(p.nome, p.x + p.w / 2, p.y - 10);
     return;
   }
@@ -1273,7 +1316,7 @@ function desenharBoneco(p) {
   }
 
   const baseY = p.montado ? p.y - 18 : p.y;
-  const escala = p.grande ? 1.18 : 1;
+  const escala = (p.grande ? 1.18 : 1) * ESCALA_VISUAL_PLAYER;
   const offsetX = p.grande ? -3 : 0;
   const offsetY = p.grande ? -10 : 0;
 
@@ -1601,6 +1644,11 @@ function desenharCogumelo(c) {
 function desenharVilao(i) {
   if (i.morto) return;
 
+  if (i.tipo === "meninoRoblox") {
+    desenharMeninoRoblox(i);
+    return;
+  }
+
   if (i.tipo === "cellbesta") {
     desenharCellMontadoNaBesta(i);
     return;
@@ -1627,6 +1675,47 @@ function desenharVilao(i) {
   }
 
   desenharSoldado(i);
+}
+
+function desenharMeninoRoblox(i) {
+  prepararVilao(i);
+
+  ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+  ctx.fillRect(2, 54, 42, 6);
+
+  ctx.fillStyle = "#f1c27d";
+  ctx.fillRect(10, 5, 24, 20);
+  ctx.fillStyle = "#5c2e12";
+  ctx.fillRect(7, 0, 30, 8);
+  ctx.fillRect(7, 7, 7, 8);
+
+  ctx.fillStyle = "#111111";
+  ctx.fillRect(15, 13, 4, 4);
+  ctx.fillRect(27, 13, 4, 4);
+  ctx.fillRect(18, 20, 10, 2);
+
+  ctx.fillStyle = "#e03131";
+  ctx.fillRect(7, 26, 30, 20);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 8px monospace";
+  ctx.fillText("R", 20, 39);
+
+  ctx.fillStyle = "#1971c2";
+  ctx.fillRect(9, 46, 11, 12);
+  ctx.fillRect(26, 46, 11, 12);
+  ctx.fillStyle = "#050505";
+  ctx.fillRect(6, 55, 15, 4);
+  ctx.fillRect(25, 55, 15, 4);
+
+  ctx.fillStyle = "#20252c";
+  ctx.fillRect(35, 25, 10, 18);
+  ctx.fillStyle = "#74c0fc";
+  ctx.fillRect(37, 28, 6, 10);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(39, 29, 2, 2);
+
+  ctx.restore();
+  desenharEtiqueta("Menino do Roblox", i.x + i.w / 2, i.y - 8);
 }
 
 function prepararVilao(i) {
@@ -2127,23 +2216,30 @@ function tentarDisparoVilao(vilao, indice) {
   const dy = centroJoaoY - centroVilaoY;
   const distancia = Math.max(1, Math.hypot(dx, dy));
   const ehMessi = vilao.tipo === "messi";
+  const ehMeninoRoblox = vilao.tipo === "meninoRoblox";
+  const ataqueRoblox = Math.floor(frame / intervalo) % 2 === 0 ? "celular" : "placaInjustica";
   const velocidade =
     (2.7 + faseAtual * 0.14 + (ehChefeVilao(vilao) ? 0.85 : 0)) *
     AJUSTE_VELOCIDADE_JOGAVEL *
     AJUSTE_PODER_VILAO_JOGAVEL *
-    (ehMessi ? AJUSTE_MESSI_JOGAVEL : 1);
+    (ehMessi ? AJUSTE_MESSI_JOGAVEL : 1) *
+    (ehMeninoRoblox && ataqueRoblox === "placaInjustica" ? 0.42 : 1);
+
+  const tipoPoder = ehMessi ? "bolaOuro" : ehMeninoRoblox ? ataqueRoblox : "poderVilao";
+  const larguraPoder = tipoPoder === "placaInjustica" ? 150 : tipoPoder === "celular" ? 18 : ehChefeVilao(vilao) ? 18 : 14;
+  const alturaPoder = tipoPoder === "placaInjustica" ? 48 : tipoPoder === "celular" ? 28 : ehChefeVilao(vilao) ? 18 : 14;
 
   poderes.push({
     dono: "vilao",
-    tipo: ehMessi ? "bolaOuro" : "poderVilao",
-    nome: ehMessi ? "bola de ouro do Messi" : "poder do vilao",
+    tipo: tipoPoder,
+    nome: ehMessi ? "bola de ouro do Messi" : tipoPoder === "celular" ? "celular do menino" : tipoPoder === "placaInjustica" ? "placa QUEREMOS INJUSTICA" : "poder do vilao",
     x: centroVilaoX,
-    y: centroVilaoY,
-    w: ehMessi ? 18 : ehChefeVilao(vilao) ? 18 : 14,
-    h: ehMessi ? 18 : ehChefeVilao(vilao) ? 18 : 14,
+    y: centroVilaoY - alturaPoder / 2,
+    w: larguraPoder,
+    h: alturaPoder,
     vx: (dx / distancia) * velocidade,
-    vy: (dy / distancia) * velocidade,
-    cor: ehMessi ? "#ffd43b" : ehChefeVilao(vilao) ? "#ff0054" : "#c77dff",
+    vy: tipoPoder === "placaInjustica" ? 0 : (dy / distancia) * velocidade,
+    cor: ehMessi ? "#ffd43b" : ehMeninoRoblox ? "#f7f3de" : ehChefeVilao(vilao) ? "#ff0054" : "#c77dff",
     vida: 160
   });
 }
@@ -2254,6 +2350,35 @@ function atualizarPoderes() {
 
 function desenharPoderes() {
   poderes.forEach(poder => {
+    if (poder.tipo === "placaInjustica") {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.32)";
+      ctx.fillRect(poder.x - 4, poder.y - 4, poder.w + 8, poder.h + 8);
+      ctx.fillStyle = "#f7f3de";
+      ctx.fillRect(poder.x, poder.y, poder.w, poder.h);
+      ctx.strokeStyle = "#e03131";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(poder.x + 2, poder.y + 2, poder.w - 4, poder.h - 4);
+      ctx.fillStyle = "#111111";
+      ctx.font = "bold 13px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("QUEREMOS", poder.x + poder.w / 2, poder.y + 20);
+      ctx.fillText("INJUSTI\u00c7A", poder.x + poder.w / 2, poder.y + 37);
+      ctx.textAlign = "left";
+      return;
+    }
+
+    if (poder.tipo === "celular") {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+      ctx.fillRect(poder.x - 3, poder.y - 3, poder.w + 6, poder.h + 6);
+      ctx.fillStyle = "#20252c";
+      ctx.fillRect(poder.x, poder.y, poder.w, poder.h);
+      ctx.fillStyle = "#74c0fc";
+      ctx.fillRect(poder.x + 3, poder.y + 4, poder.w - 6, poder.h - 9);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(poder.x + 7, poder.y + 6, 4, 4);
+      return;
+    }
+
     if (poder.tipo === "bolaOuro") {
       ctx.fillStyle = "rgba(255, 212, 59, 0.28)";
       ctx.fillRect(poder.x - 5, poder.y - 5, poder.w + 10, poder.h + 10);
