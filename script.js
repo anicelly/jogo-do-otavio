@@ -6,6 +6,11 @@ ctx.imageSmoothingEnabled = false;
 const spriteBossSupremo = new Image();
 spriteBossSupremo.src = "assets/mihawk-pixel-art.png";
 
+const musicaGokuArquivo = new Audio("assets/goku-theme.mp3");
+musicaGokuArquivo.loop = true;
+musicaGokuArquivo.preload = "auto";
+musicaGokuArquivo.volume = 0.58;
+
 const keys = {};
 let faseAtual = 0;
 let moedas = 0;
@@ -167,6 +172,7 @@ function selecionarPersonagem(id) {
   joao.cabelo = escolhido.cabelo;
   joao.avatar = escolhido.avatar;
   joao.numero = escolhido.numero;
+  sincronizarMusicaGoku(true);
 
   if (activePlayerLabel) {
     activePlayerLabel.innerText = "Personagem: " + escolhido.nome;
@@ -562,6 +568,13 @@ const fases = [
   }
 ];
 
+// Reforcos nas cinco primeiras fases para elevar a dificuldade inicial.
+fases[0].inimigos.push(criarVilao("cavaleiro", 730, 436, 2.4, 680, 860));
+fases[1].inimigos.push(criarVilao("meninoRoblox", 502, 428, 2.1, 470, 690));
+fases[2].inimigos.push(criarVilao("soldado", 456, 438, 3.0, 430, 610));
+fases[3].inimigos.push(criarVilao("meninoRoblox", 612, 428, 2.3, 570, 810));
+fases[4].inimigos.push(criarVilao("lobo", 748, 448, 3.6, 690, 880));
+
 function criarJogador(nome, x, corCamisa, corCalca, cabelo) {
   return {
     nome,
@@ -761,6 +774,23 @@ function alternarSom() {
     iniciarAudio();
     tocarSom("portal");
   }
+  sincronizarMusicaGoku(false);
+}
+
+function sincronizarMusicaGoku(reiniciarAoSair = false) {
+  const deveTocar = somLigado && joao.avatar === "goku" && !venceu && !gameOver;
+
+  if (deveTocar) {
+    if (musicaGokuArquivo.paused) {
+      musicaGokuArquivo.play().catch(() => {
+        // O navegador libera o audio na proxima interacao do jogador.
+      });
+    }
+    return;
+  }
+
+  musicaGokuArquivo.pause();
+  if (reiniciarAoSair) musicaGokuArquivo.currentTime = 0;
 }
 
 function tocarTom(freq, duracao, tipo, volume, atraso = 0) {
@@ -831,22 +861,14 @@ function tocarSom(nome) {
 
 function tocarMusica() {
   if (!somLigado || venceu) return;
-  musicaTimer--;
-  if (musicaTimer > 0) return;
 
   if (joao.avatar === "goku") {
-    const melodiaGoku = [523, 659, 784, 880, 784, 988, 880, 784, 659, 784, 1046, 988, 880, 784, 659, 587];
-    const baixoGoku = [131, 165, 196, 220, 147, 196, 220, 165];
-    const energiaGoku = [1046, 1175, 1318, 1568];
-    tocarTom(melodiaGoku[notaMusica % melodiaGoku.length], 0.12, "square", 0.052);
-    tocarTom(baixoGoku[Math.floor(notaMusica / 2) % baixoGoku.length], 0.18, "triangle", 0.032);
-    if (notaMusica % 4 === 0) {
-      tocarTom(energiaGoku[Math.floor(notaMusica / 4) % energiaGoku.length], 0.09, "sawtooth", 0.022, 0.04);
-    }
-    notaMusica++;
-    musicaTimer = 11;
+    sincronizarMusicaGoku(false);
     return;
   }
+
+  musicaTimer--;
+  if (musicaTimer > 0) return;
 
   if (joao.avatar === "neymar") {
     const baixoFunk = [82, 82, 110, 98, 82, 123, 98, 73];
@@ -2365,11 +2387,13 @@ function tentarDisparoVilao(vilao, indice) {
   const distancia = Math.max(1, Math.hypot(dx, dy));
   const ehMessi = vilao.tipo === "messi";
   const ehMeninoRoblox = vilao.tipo === "meninoRoblox";
+  const ajusteFaseOito = faseAtual === 7 ? 0.93 : 1;
   const ataqueRoblox = Math.floor(frame / intervalo) % 2 === 0 ? "celular" : "placaInjustica";
   const velocidade =
     (2.7 + faseAtual * 0.14 + (ehChefeVilao(vilao) ? 0.85 : 0)) *
     AJUSTE_VELOCIDADE_JOGAVEL *
     AJUSTE_PODER_VILAO_JOGAVEL *
+    ajusteFaseOito *
     (ehMessi ? AJUSTE_MESSI_JOGAVEL : 1) *
     (ehMeninoRoblox ? 1.35 : 1) *
     (ehMeninoRoblox && ataqueRoblox === "placaInjustica" ? 0.42 : 1);
@@ -2390,6 +2414,26 @@ function tentarDisparoVilao(vilao, indice) {
     vy: tipoPoder === "placaInjustica" ? 0 : (dy / distancia) * velocidade,
     cor: ehMessi ? "#ffd43b" : ehMeninoRoblox ? "#f7f3de" : ehChefeVilao(vilao) ? "#ff0054" : "#c77dff",
     vida: 160
+  });
+}
+
+function lancarPlacaInjusticaGlobal() {
+  const intervalo = faseAtual < 5 ? 360 : 480;
+  if (frame % intervalo !== 0) return;
+
+  const vemDaDireita = Math.floor(frame / intervalo) % 2 === 0;
+  poderes.push({
+    dono: "vilao",
+    tipo: "placaInjustica",
+    nome: "placa QUEREMOS INJUSTICA",
+    x: vemDaDireita ? canvas.width + 8 : -158,
+    y: 180 + (faseAtual * 53) % 230,
+    w: 150,
+    h: 48,
+    vx: vemDaDireita ? -2.25 : 2.25,
+    vy: 0,
+    cor: "#f7f3de",
+    vida: 560
   });
 }
 
@@ -3046,6 +3090,7 @@ function loop() {
   atualizarPoderGoku();
   atualizarPoderRoblox();
   atualizarInimigos();
+  lancarPlacaInjusticaGlobal();
   atualizarPoderes();
   atualizarTimerChefe();
   if (gameOver) {
