@@ -3,6 +3,9 @@ const ctx = canvas.getContext("2d");
 const mensagem = document.getElementById("mensagem");
 ctx.imageSmoothingEnabled = false;
 
+const spriteBossSupremo = new Image();
+spriteBossSupremo.src = "assets/mihawk-pixel-art.png";
+
 const keys = {};
 let faseAtual = 0;
 let moedas = 0;
@@ -553,7 +556,8 @@ const fases = [
       criarVilao("messi", 318, 308, 5.7, 284, 366),
       criarVilao("cavaleiro", 708, 188, 5.5, 662, 762),
       criarChefeFinal(760, 416, "Rei Hard Final", 14, "rei"),
-      criarCellBesta(642, 392)
+      criarCellBesta(642, 392),
+      criarBossSupremo(706, 384)
     ]
   }
 ];
@@ -647,6 +651,27 @@ function criarCellBesta(x, y) {
   };
 }
 
+function criarBossSupremo(x, y) {
+  return {
+    tipo: "bossSupremo",
+    nome: "Boss Supremo",
+    x,
+    y,
+    w: 84,
+    h: 96,
+    vel: 2.4,
+    min: 620,
+    max: 866,
+    direcao: 1,
+    vida: 12,
+    vidaMax: 12,
+    invencivel: 0,
+    morto: false,
+    clones: [],
+    ultimoClone: null
+  };
+}
+
 function colisao(a, b) {
   return (
     a.x < b.x + b.w &&
@@ -666,7 +691,7 @@ function dificuldadeFinal() {
 }
 
 function ehChefeVilao(vilao) {
-  return vilao.tipo === "chefe" || vilao.tipo === "rei" || vilao.tipo === "cellbesta";
+  return vilao.tipo === "chefe" || vilao.tipo === "rei" || vilao.tipo === "cellbesta" || vilao.tipo === "bossSupremo";
 }
 
 function chefesVivosDaFase() {
@@ -1674,6 +1699,12 @@ function desenharCogumelo(c) {
 function desenharVilao(i) {
   if (i.morto) return;
 
+  if (i.tipo === "bossSupremo") {
+    i.clones.forEach(clone => desenharBossSupremo(clone, true));
+    desenharBossSupremo(i, false);
+    return;
+  }
+
   if (i.tipo === "meninoRoblox") {
     desenharMeninoRoblox(i);
     return;
@@ -1705,6 +1736,42 @@ function desenharVilao(i) {
   }
 
   desenharSoldado(i);
+}
+
+function desenharBossSupremo(i, copia = false) {
+  ctx.save();
+  ctx.globalAlpha = copia ? 0.58 : 1;
+
+  if (i.direcao < 0) {
+    ctx.translate(i.x + i.w, i.y);
+    ctx.scale(-1, 1);
+  } else {
+    ctx.translate(i.x, i.y);
+  }
+
+  if (spriteBossSupremo.complete && spriteBossSupremo.naturalWidth > 0) {
+    ctx.drawImage(spriteBossSupremo, 0, 0, i.w, i.h);
+  } else {
+    ctx.fillStyle = copia ? "#7b2cbf" : "#c9184a";
+    ctx.fillRect(0, 0, i.w, i.h);
+    ctx.fillStyle = "#f7c948";
+    ctx.fillRect(20, 18, i.w - 40, i.h - 36);
+  }
+  ctx.restore();
+
+  if (copia) {
+    desenharEtiqueta("COPIA", i.x + i.w / 2, i.y - 8);
+    return;
+  }
+
+  const barraW = 96;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.76)";
+  ctx.fillRect(i.x - 6, i.y - 24, barraW, 11);
+  ctx.fillStyle = "#c9184a";
+  ctx.fillRect(i.x - 4, i.y - 22, (barraW - 4) * (i.vida / i.vidaMax), 7);
+  ctx.strokeStyle = "#f7f3de";
+  ctx.strokeRect(i.x - 6, i.y - 24, barraW, 11);
+  desenharEtiqueta(i.nome, i.x + i.w / 2, i.y - 30);
 }
 
 function desenharMeninoRoblox(i) {
@@ -2227,6 +2294,8 @@ function atualizarInimigos() {
     if (i.morto) return;
     if (i.invencivel > 0) i.invencivel--;
 
+    if (i.tipo === "bossSupremo") atualizarClonesBossSupremo(i);
+
     const ajusteVilao = i.tipo === "messi" ? AJUSTE_MESSI_JOGAVEL : i.tipo === "meninoRoblox" ? 1.35 : 1;
     i.x += i.vel * multiplicador * AJUSTE_VELOCIDADE_JOGAVEL * ajusteVilao;
 
@@ -2239,6 +2308,48 @@ function atualizarInimigos() {
 
     tratarColisaoVilao(joao, i);
   });
+}
+
+function atualizarClonesBossSupremo(boss) {
+  if (boss.ultimoClone === null) boss.ultimoClone = frame;
+
+  if (frame - boss.ultimoClone >= 180 && boss.clones.length < 4) {
+    const lado = boss.clones.length % 2 === 0 ? -1 : 1;
+    const x = Math.max(80, Math.min(canvas.width - boss.w - 40, boss.x + lado * (130 + boss.clones.length * 34)));
+    boss.clones.push({
+      x,
+      y: boss.y,
+      w: boss.w,
+      h: boss.h,
+      vel: lado * (1.4 + boss.clones.length * 0.18),
+      min: 54,
+      max: canvas.width - 54,
+      direcao: lado,
+      ativo: true
+    });
+    boss.ultimoClone = frame;
+    tocarSom("portal");
+    criarParticulas(x + boss.w / 2, boss.y + boss.h / 2, "#c77dff", 30);
+    mostrarAviso("O Boss Supremo criou uma copia!");
+  }
+
+  for (let c = boss.clones.length - 1; c >= 0; c--) {
+    const clone = boss.clones[c];
+    clone.x += clone.vel * AJUSTE_VELOCIDADE_JOGAVEL;
+
+    if (clone.x <= clone.min || clone.x + clone.w >= clone.max) {
+      clone.vel *= -1;
+      clone.direcao = clone.vel >= 0 ? 1 : -1;
+    }
+
+    if (colisao(joao, clone)) {
+      boss.clones.splice(c, 1);
+      joao.velY = -7;
+      criarParticulas(clone.x + clone.w / 2, clone.y + clone.h / 2, "#9d4edd", 24);
+      tocarSom("pisao");
+      mostrarAviso("Era uma copia! Procure o Boss verdadeiro.");
+    }
+  }
 }
 
 function tentarDisparoVilao(vilao, indice) {
@@ -2881,6 +2992,10 @@ function reiniciarJogo() {
       if (ehChefeVilao(i)) {
         i.vida = i.vidaMax;
         i.invencivel = 0;
+      }
+      if (i.tipo === "bossSupremo") {
+        i.clones = [];
+        i.ultimoClone = null;
       }
     });
     fase.yoshi.salvo = false;
