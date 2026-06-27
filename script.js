@@ -29,6 +29,8 @@ const AJUSTE_MESSI_JOGAVEL = 0.65;
 const AJUSTE_METEORO_JOGAVEL = 0.62;
 const AJUSTE_PODER_VILAO_JOGAVEL = 0.7;
 const ESCALA_VISUAL_PLAYER = 1.14;
+const ALTURA_MINIMA_VOO_GOKU = 96;
+const ENERGIA_MAXIMA_VOO_GOKU = 300;
 let chefeTimer = null;
 let chefeTimerAtivo = false;
 let chefeTimerAlvo = null;
@@ -577,6 +579,7 @@ function criarJogador(nome, x, corCamisa, corCalca, cabelo) {
     poderTempo: 0,
     nuvem: false,
     superSayajin: false,
+    energiaVoo: ENERGIA_MAXIMA_VOO_GOKU,
     agachado: false,
     alturaNormal: 58,
     alturaAgachado: 38
@@ -807,9 +810,9 @@ function tocarMusica() {
   if (musicaTimer > 0) return;
 
   if (joao.avatar === "goku") {
-    const melodiaGoku = [659, 784, 880, 988, 880, 784, 659, 587, 659, 880, 1046, 1175, 1046, 880, 784, 659];
-    const baixoGoku = [165, 196, 220, 247, 196, 220, 147, 165];
-    const energiaGoku = [1318, 1175, 1046, 988];
+    const melodiaGoku = [523, 659, 784, 880, 784, 988, 880, 784, 659, 784, 1046, 988, 880, 784, 659, 587];
+    const baixoGoku = [131, 165, 196, 220, 147, 196, 220, 165];
+    const energiaGoku = [1046, 1175, 1318, 1568];
     tocarTom(melodiaGoku[notaMusica % melodiaGoku.length], 0.12, "square", 0.052);
     tocarTom(baixoGoku[Math.floor(notaMusica / 2) % baixoGoku.length], 0.18, "triangle", 0.032);
     if (notaMusica % 4 === 0) {
@@ -916,6 +919,7 @@ function resetarPersonagens() {
   joao.poderTempo = 0;
   joao.nuvem = false;
   joao.superSayajin = false;
+  joao.energiaVoo = ENERGIA_MAXIMA_VOO_GOKU;
   joao.agachado = false;
   joao.h = joao.alturaNormal;
 
@@ -959,6 +963,7 @@ function moverPersonagem(p, esquerda, direita, pulo) {
   p.prevY = p.y;
   p.velX = 0;
   p.andando = false;
+  if (p.avatar !== "goku") p.nuvem = false;
   const querAbaixar = teclaAtiva(["s", "ArrowDown"]);
 
   if (querAbaixar && !p.agachado && !p.montado && !p.nuvem) {
@@ -973,7 +978,8 @@ function moverPersonagem(p, esquerda, direita, pulo) {
     p.agachado = false;
   }
 
-  const velocidadeBase = (p.nuvem ? 5.5 : p.montado ? 5.35 : 4.35) + (p.grande ? 0.45 : 0);
+  const bonusRoblox = p.avatar === "meninoRoblox" ? 1.18 : 1;
+  const velocidadeBase = ((p.nuvem ? 5.5 : p.montado ? 5.35 : 4.35) + (p.grande ? 0.45 : 0)) * bonusRoblox;
   const velocidade = p.agachado ? velocidadeBase * 0.58 : velocidadeBase;
   const forcaPulo = (p.nuvem ? -9.2 : p.montado ? -15.2 : -13.2) - (p.grande ? 0.8 : 0);
   const gravidade = p.nuvem ? 0.28 : p.montado ? 0.58 : 0.64;
@@ -990,8 +996,9 @@ function moverPersonagem(p, esquerda, direita, pulo) {
     p.direcao = 1;
   }
 
-  if (p.nuvem && teclaAtiva(pulo)) {
+  if (p.nuvem && teclaAtiva(pulo) && p.energiaVoo > 0) {
     p.velY = Math.max(p.velY - 0.9, -6.8);
+    p.energiaVoo--;
     p.noChao = false;
   } else if (teclaAtiva(pulo) && p.noChao) {
     p.velY = forcaPulo;
@@ -1003,6 +1010,15 @@ function moverPersonagem(p, esquerda, direita, pulo) {
   p.x += p.velX;
   p.y += p.velY;
   p.noChao = false;
+
+  if (p.nuvem && !teclaAtiva(pulo)) {
+    p.energiaVoo = Math.min(ENERGIA_MAXIMA_VOO_GOKU, p.energiaVoo + 2);
+  }
+
+  if (p.nuvem && p.y < ALTURA_MINIMA_VOO_GOKU) {
+    p.y = ALTURA_MINIMA_VOO_GOKU;
+    p.velY = Math.max(0, p.velY);
+  }
 
   fases[faseAtual].plataformas.forEach(plataforma => {
     const estavaAcima = p.y + p.h - p.velY <= plataforma.y + 4;
@@ -2151,6 +2167,13 @@ function desenharHUD(fase) {
     ctx.fillText("CHEFE: " + segundos + "s", 590, 68);
   }
 
+  if (joao.avatar === "goku" && joao.nuvem) {
+    const energia = Math.round((joao.energiaVoo / ENERGIA_MAXIMA_VOO_GOKU) * 100);
+    ctx.fillStyle = energia <= 20 ? "#ef476f" : "#74c0fc";
+    ctx.font = "15px monospace";
+    ctx.fillText("VOO: " + energia + "%", 746, 68);
+  }
+
   ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
   ctx.fillRect(502, 22, 216, 12);
   ctx.fillStyle = "#51d88a";
@@ -2204,7 +2227,7 @@ function atualizarInimigos() {
     if (i.morto) return;
     if (i.invencivel > 0) i.invencivel--;
 
-    const ajusteVilao = i.tipo === "messi" ? AJUSTE_MESSI_JOGAVEL : 1;
+    const ajusteVilao = i.tipo === "messi" ? AJUSTE_MESSI_JOGAVEL : i.tipo === "meninoRoblox" ? 1.35 : 1;
     i.x += i.vel * multiplicador * AJUSTE_VELOCIDADE_JOGAVEL * ajusteVilao;
 
     if (i.x <= i.min || i.x >= i.max) {
@@ -2237,6 +2260,7 @@ function tentarDisparoVilao(vilao, indice) {
     AJUSTE_VELOCIDADE_JOGAVEL *
     AJUSTE_PODER_VILAO_JOGAVEL *
     (ehMessi ? AJUSTE_MESSI_JOGAVEL : 1) *
+    (ehMeninoRoblox ? 1.35 : 1) *
     (ehMeninoRoblox && ataqueRoblox === "placaInjustica" ? 0.42 : 1);
 
   const tipoPoder = ehMessi ? "bolaOuro" : ehMeninoRoblox ? ataqueRoblox : "poderVilao";
@@ -2314,7 +2338,7 @@ function dispararPoderRoblox() {
   if (joao.avatar !== "meninoRoblox" || poderRobloxCooldown > 0 || gameOver || venceu) return;
 
   const placa = proximoPoderRoblox === "placaInjustica";
-  poderRobloxCooldown = placa ? 105 : 62;
+  poderRobloxCooldown = placa ? 78 : 44;
   poderes.push({
     dono: "robloxPlayer",
     tipo: proximoPoderRoblox,
@@ -2323,7 +2347,7 @@ function dispararPoderRoblox() {
     y: placa ? joao.y + 2 : joao.y + 18,
     w: placa ? 150 : 18,
     h: placa ? 48 : 28,
-    vx: joao.direcao * (placa ? 3.1 : 6.2),
+    vx: joao.direcao * (placa ? 4.4 : 8.2),
     vy: 0,
     cor: placa ? "#f7f3de" : "#74c0fc",
     vida: placa ? 150 : 95
@@ -2334,7 +2358,7 @@ function dispararPoderRoblox() {
 
 function atualizarPoderRoblox() {
   if (poderRobloxCooldown > 0) poderRobloxCooldown--;
-  if (joao.avatar === "meninoRoblox" && jogoIniciado && !pausado && !gameOver && frame % 66 === 0) {
+  if (joao.avatar === "meninoRoblox" && jogoIniciado && !pausado && !gameOver && frame % 48 === 0) {
     dispararPoderRoblox();
   }
 }
@@ -2617,19 +2641,19 @@ function salvarYoshi() {
   const candidatos = [joao];
 
   candidatos.forEach(p => {
-    if (!fase.yoshi.montadoPor && !p.montado && colisao(p, yoshiBox)) {
+    if (fase.yoshi.salvo || !colisao(p, yoshiBox)) return;
+
+    const podeMontar = p.avatar === "humano" || p.avatar === "neymar";
+    if (podeMontar && !fase.yoshi.montadoPor && !p.montado) {
       p.montado = true;
       fase.yoshi.montadoPor = p.nome;
-
-      if (!fase.yoshi.salvo) {
-        fase.yoshi.salvo = true;
-        yoshis++;
-      }
-
-      tocarSom("yoshi");
-      criarParticulas(fase.yoshi.x + 30, fase.yoshi.y + 28, "#51d88a", 24);
-      mostrarAviso(p.nome + " montou no Yoshi!");
     }
+
+    fase.yoshi.salvo = true;
+    yoshis++;
+    tocarSom("yoshi");
+    criarParticulas(fase.yoshi.x + 30, fase.yoshi.y + 28, "#51d88a", 24);
+    mostrarAviso(podeMontar ? p.nome + " montou no Yoshi!" : p.nome + " resgatou o Yoshi!");
   });
 }
 
