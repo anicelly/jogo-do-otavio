@@ -40,6 +40,12 @@ body {
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 14px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  background: rgba(16, 20, 28, .78);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 18px 50px rgba(0,0,0,.25);
 }
 
 .kicker {
@@ -108,7 +114,7 @@ h2, h3, p { margin-top: 0; }
 .stage {
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   background: linear-gradient(180deg, rgba(34, 43, 56, 0.95), rgba(18, 22, 30, 0.95));
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
 }
@@ -132,7 +138,8 @@ canvas {
   gap: 12px;
   margin-top: 12px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, rgba(25,31,42,.96), rgba(34,43,56,.9));
 }
 
 #mensagem {
@@ -163,6 +170,11 @@ button {
 button:active {
   transform: translateY(3px);
   box-shadow: 0 2px 0 #9f6800;
+}
+
+#botaoMultiplayer.is-active {
+  background: linear-gradient(180deg, #69db7c, #2f9e44);
+  box-shadow: 0 5px 0 #176629;
 }
 
 .touch-controls {

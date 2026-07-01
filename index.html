@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reino Pixel Extremo</title>
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
   <main class="app">
@@ -15,7 +15,9 @@
       </div>
 
       <div class="controls" aria-label="Controles">
-        <span><strong>Teclado</strong> A/D/W/S, setas e X para golpear</span>
+        <span><strong>P1</strong> A/D/W/S + X</span>
+        <span><strong>P2</strong> J/L/I/K + O</span>
+        <span><strong>Dificuldade</strong> +1 equilibrada</span>
         <span><strong>Celular</strong> escolha personagem e jogue</span>
         <span id="deviceMode" class="device-mode"><strong>Modo</strong> detectando...</span>
       </div>
@@ -27,6 +29,7 @@
         <strong id="mensagem">Fase 1</strong>
         <div class="actions">
           <button type="button" onclick="alternarLoja()" id="botaoLoja">Loja</button>
+          <button type="button" onclick="alternarMultiplayer()" id="botaoMultiplayer">2 jogadores: não</button>
           <button type="button" onclick="alternarSom()" id="botaoSom">Som: ligado</button>
           <button type="button" onclick="reiniciarJogo()">Reiniciar</button>
         </div>
@@ -84,6 +87,6 @@
     </section>
   </main>
 
-  <script src="script.js?v=29"></script>
+  <script src="script.js?v=30"></script>
 </body>
 </html>

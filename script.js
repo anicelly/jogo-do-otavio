@@ -25,6 +25,7 @@ let comboDestruicaoTempo = 0;
 let faseBonusTimer = 480;
 let faseBonusConcluida = false;
 let pausadoAntesLoja = false;
+let multiplayerAtivo = false;
 let carteira = carregarCarteira();
 let moedasLoja = carteira.moedas;
 let diamantes = carteira.diamantes;
@@ -77,6 +78,7 @@ const deviceMode = document.getElementById("deviceMode");
 const loja = document.getElementById("loja");
 const saldoLoja = document.getElementById("saldoLoja");
 const avisoLoja = document.getElementById("avisoLoja");
+const botaoMultiplayer = document.getElementById("botaoMultiplayer");
 
 function carregarCarteira() {
   const padrao = { moedas: 0, diamantes: 0, inventario: { vidas: 0, segundosExtras: 0 } };
@@ -142,6 +144,14 @@ function comprarItemLoja(item) {
   atualizarPainelLoja();
   avisoLoja.textContent = "Compra concluída e salva no inventário!";
   tocarSom("moeda");
+}
+
+function alternarMultiplayer() {
+  multiplayerAtivo = !multiplayerAtivo;
+  botaoMultiplayer.textContent = "2 jogadores: " + (multiplayerAtivo ? "sim" : "não");
+  botaoMultiplayer.classList.toggle("is-active", multiplayerAtivo);
+  resetarPersonagens();
+  mostrarAviso(multiplayerAtivo ? "COOP ATIVO: se um cair, os dois perdem!" : "Modo para um jogador ativo.");
 }
 
 function detectarDispositivo() {
@@ -241,6 +251,8 @@ document.querySelectorAll(".touch-btn").forEach(botao => {
 
 const joao = criarJogador("Joao", 52, "#e63946", "#1d3557", "#3b1f0f");
 const luquinhas = criarJogador("Luquinhas", 112, "#457bff", "#191919", "#111111");
+const jogador2 = criarJogador("Jogador 2", 106, "#457bff", "#191919", "#111111");
+jogador2.avatar = "humano";
 
 const personagensDisponiveis = {
   joao: { nome: "Joao", camisa: "#e63946", calca: "#1d3557", cabelo: "#3b1f0f", avatar: "humano", numero: "" },
@@ -757,7 +769,7 @@ fases.forEach((fase, indice) => {
     salvo: false,
     montadoPor: null
   };
-  if (indice === 1) fase.premio50 = { x: 758, y: 430, w: 48, h: 24, ativo: false, coletado: false };
+  if (indice === 1) fase.premio50 = { x: 730, y: 414, w: 104, h: 52, ativo: false, coletado: false };
   fase.tipoArmadilha = tiposArmadilha[Math.max(0, indice - 1) % tiposArmadilha.length];
   const plataformasFixas = fase.plataformas.filter(plataforma => !plataforma.movel && plataforma.w >= 48);
   fase.armadilhas = plataformasFixas.slice(0, 3).map((plataforma, armadilhaIndice) => ({
@@ -820,6 +832,15 @@ fases.forEach((fase, indice) => {
       { tipo: "barrilQuebravel", x: 730, y: 418, w: 58, h: 68, vida: 6, vidaMax: 6, quebrado: false },
       { tipo: "carroQuebravel", x: 310, y: 388, w: 340, h: 98, vida: 12, vidaMax: 12, quebrado: false }
     ];
+  } else {
+    fase.inimigos.forEach(inimigo => {
+      inimigo.vel *= 1.1;
+      if (ehChefeVilao(inimigo)) {
+        const resistenciaExtra = 1 + Math.floor(indice / 4);
+        inimigo.vida += resistenciaExtra;
+        inimigo.vidaMax += resistenciaExtra;
+      }
+    });
   }
 });
 
@@ -986,7 +1007,7 @@ function mostrarAviso(texto) {
 }
 
 function dificuldadeFinal() {
-  return 0.92 + faseAtual * 0.07 + (faseAtual >= 5 ? 0.12 : 0) + (faseAtual >= 9 ? 0.08 : 0);
+  return 1.02 + faseAtual * 0.075 + (faseAtual >= 5 ? 0.14 : 0) + (faseAtual >= 9 ? 0.1 : 0);
 }
 
 function ehChefeVilao(vilao) {
@@ -1319,6 +1340,34 @@ function resetarPersonagens() {
   joao.direcao = fase?.bonus ? -1 : 1;
   joao.h = joao.alturaNormal;
 
+  jogador2.x = fase?.bonus ? 800 : 102;
+  jogador2.y = 422;
+  jogador2.velX = 0;
+  jogador2.velY = 0;
+  jogador2.invencivel = 80;
+  jogador2.direcao = fase?.bonus ? -1 : 1;
+  jogador2.noChao = false;
+  jogador2.agachado = false;
+  jogador2.ataqueTempo = 0;
+  jogador2.ataqueCooldown = 0;
+  jogador2.h = jogador2.alturaNormal;
+
+}
+
+function jogadoresAtivos() {
+  return multiplayerAtivo ? [joao, jogador2] : [joao];
+}
+
+function derrotarJogadores(motivo = "A dupla foi derrotada!") {
+  if (!multiplayerAtivo) {
+    resetarPersonagens();
+    return;
+  }
+  gameOver = true;
+  pausado = false;
+  mensagem.innerText = motivo + " Se um morre, os dois morrem.";
+  tocarSom("dano");
+  tremor = 30;
 }
 
 function resetarPlataformasMoveis(fase) {
@@ -1355,12 +1404,12 @@ function atualizarPlataformasMoveis() {
   });
 }
 
-function moverPersonagem(p, esquerda, direita, pulo) {
+function moverPersonagem(p, esquerda, direita, pulo, baixo = ["s", "ArrowDown"]) {
   p.prevY = p.y;
   p.velX = 0;
   p.andando = false;
   if (p.avatar !== "goku") p.nuvem = false;
-  const querAbaixar = teclaAtiva(["s", "ArrowDown"]);
+  const querAbaixar = teclaAtiva(baixo);
 
   if (querAbaixar && !p.agachado && !p.montado && !p.nuvem) {
     p.y += p.h - p.alturaAgachado;
@@ -1432,7 +1481,7 @@ function moverPersonagem(p, esquerda, direita, pulo) {
 
   if (p.y > canvas.height + 60) {
     mostrarAviso("Cuidado com os buracos!");
-    resetarPersonagens();
+    derrotarJogadores("Um jogador caiu!");
   }
 
   if (p.invencivel > 0) p.invencivel--;
@@ -1796,18 +1845,18 @@ function desenharDestrutiveis(fase) {
       const dano = 1 - objeto.vida / objeto.vidaMax;
       const topoX = objeto.x + objeto.w * 0.22;
       const topoW = objeto.w * 0.56;
-      ctx.fillStyle = "#aeb8c4";
+      ctx.fillStyle = "#3f7651";
       ctx.fillRect(objeto.x, objeto.y + objeto.h * 0.34 + dano * 5, objeto.w, objeto.h * 0.48 - dano * 4);
-      ctx.fillStyle = "#d8dee6";
+      ctx.fillStyle = "#79a66f";
       ctx.fillRect(topoX, objeto.y + dano * 3, topoW, objeto.h * 0.4 - dano * 3);
-      ctx.fillStyle = "#406882";
+      ctx.fillStyle = "#b9d9d0";
       ctx.fillRect(objeto.x + objeto.w * 0.29, objeto.y + 7, objeto.w * 0.18, objeto.h * 0.23);
       ctx.fillRect(objeto.x + objeto.w * 0.52, objeto.y + 7, objeto.w * 0.16, objeto.h * 0.23);
       ctx.fillStyle = "#343a40";
       ctx.fillRect(objeto.x + objeto.w * 0.34, objeto.y + objeto.h * 0.46, objeto.w * 0.32, objeto.h * 0.2);
       ctx.fillStyle = "#8f9aa8";
       for (let grade = 0; grade < 6; grade++) ctx.fillRect(objeto.x + objeto.w * (0.365 + grade * 0.047), objeto.y + objeto.h * 0.49, 3, objeto.h * 0.14);
-      ctx.fillStyle = "#fff3bf";
+      ctx.fillStyle = "#d8f3dc";
       ctx.fillRect(objeto.x + objeto.w * 0.08, objeto.y + objeto.h * 0.46, objeto.w * 0.18, objeto.h * 0.13);
       ctx.fillRect(objeto.x + objeto.w * 0.74, objeto.y + objeto.h * 0.46, objeto.w * 0.18, objeto.h * 0.13);
       ctx.fillStyle = "#111111";
@@ -1980,6 +2029,29 @@ function desenharBoneco(p) {
   ctx.restore();
 
   desenharEtiqueta(nomeJogadorMontado(p), p.x + p.w / 2, baseY - 8);
+}
+
+function desenharJogador2() {
+  const p = jogador2;
+  if (p.invencivel > 0 && Math.floor(frame / 5) % 2 === 0) return;
+  if (p.ataqueTempo > 0) desenharEfeitoGolpe(p, 0);
+  ctx.save();
+  ctx.translate(p.x + p.w / 2, 0);
+  ctx.scale(p.direcao, 1);
+  ctx.fillStyle = "#111111";
+  ctx.fillRect(-11, p.y, 22, 8);
+  ctx.fillStyle = "#f1b48b";
+  ctx.fillRect(-10, p.y + 8, 20, 16);
+  ctx.fillStyle = "#457bff";
+  ctx.fillRect(-14, p.y + 24, 28, 23);
+  ctx.fillStyle = "#f1b48b";
+  ctx.fillRect(-20, p.y + 27, 7, 19);
+  ctx.fillRect(13, p.y + 27, 7, 19);
+  ctx.fillStyle = "#191919";
+  ctx.fillRect(-12, p.y + 47, 9, 11);
+  ctx.fillRect(3, p.y + 47, 9, 11);
+  ctx.restore();
+  desenharEtiqueta("P2", p.x + p.w / 2, p.y - 9);
 }
 
 function desenharEfeitoGolpe(p, deslocamentoMontaria) {
@@ -2329,16 +2401,19 @@ function desenharMoeda(m) {
 
 function desenharPremio50(premio) {
   if (!premio.ativo || premio.coletado) return;
-  const bob = Math.sin(frame / 10) * 3;
-  ctx.fillStyle = "rgba(81,216,138,0.28)";
-  ctx.fillRect(premio.x - 5, premio.y + bob - 5, premio.w + 10, premio.h + 10);
-  ctx.fillStyle = "#51d88a";
+  const bob = Math.sin(frame / 8) * 5;
+  const pulso = 10 + Math.sin(frame / 6) * 6;
+  ctx.fillStyle = "rgba(81,216,138,0.22)";
+  ctx.fillRect(premio.x - pulso, premio.y + bob - pulso, premio.w + pulso * 2, premio.h + pulso * 2);
+  ctx.fillStyle = "#69db7c";
   ctx.fillRect(premio.x, premio.y + bob, premio.w, premio.h);
-  ctx.strokeStyle = "#f7f3de";
-  ctx.strokeRect(premio.x + 2, premio.y + bob + 2, premio.w - 4, premio.h - 4);
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(premio.x + 3, premio.y + bob + 3, premio.w - 6, premio.h - 6);
   ctx.fillStyle = "#073b1d";
-  ctx.font = "bold 13px monospace";
-  ctx.fillText("R$ 50", premio.x + 4, premio.y + bob + 17);
+  ctx.font = "bold 25px monospace";
+  ctx.fillText("R$ 50", premio.x + 13, premio.y + bob + 35);
+  desenharEtiqueta("PEGUE O DINHEIRO!", premio.x + premio.w / 2, premio.y + bob - 18);
 }
 
 function desenharDiamante(diamante) {
@@ -3574,22 +3649,22 @@ function atualizarPoderSilvio() {
   }
 }
 
-function atualizarGolpeJogador() {
-  if (joao.ataqueCooldown > 0) joao.ataqueCooldown--;
-  if (joao.ataqueTempo > 0) joao.ataqueTempo--;
+function atualizarGolpeJogador(jogador = joao, teclasAtaque = ["x", "X"]) {
+  const fase = fases[faseAtual];
+  if (jogador.ataqueCooldown > 0) jogador.ataqueCooldown--;
+  if (jogador.ataqueTempo > 0) jogador.ataqueTempo--;
   if (comboDestruicaoTempo > 0) comboDestruicaoTempo--;
   else comboDestruicao = 0;
-  if (!jogoIniciado || pausado || gameOver || venceu || joao.ataqueCooldown > 0 || !teclaAtiva(["x", "X"])) return;
+  if (!jogoIniciado || pausado || gameOver || venceu || jogador.ataqueCooldown > 0 || !teclaAtiva(teclasAtaque)) return;
 
-  joao.ataqueTempo = 12;
-  joao.ataqueCooldown = fase.bonus ? 8 : 22;
+  jogador.ataqueTempo = 12;
+  jogador.ataqueCooldown = fase.bonus ? 8 : 22;
   const alcance = {
-    x: joao.direcao > 0 ? joao.x + joao.w - 2 : joao.x - 54,
-    y: joao.y + 8,
+    x: jogador.direcao > 0 ? jogador.x + jogador.w - 2 : jogador.x - 54,
+    y: jogador.y + 8,
     w: 56,
     h: 46
   };
-  const fase = fases[faseAtual];
   const inimigo = fase.inimigos.find(alvo => !alvo.morto && colisao(alcance, alvo));
 
   if (inimigo) {
@@ -3659,12 +3734,15 @@ function atualizarPoderes() {
       }
     }
 
-    if (poder.dono === "vilao" && joao.invencivel <= 0 && colisao(joao, poder)) {
+    const jogadorAtingido = poder.dono === "vilao"
+      ? jogadoresAtivos().find(jogador => jogador.invencivel <= 0 && colisao(jogador, poder))
+      : null;
+    if (jogadorAtingido) {
       mostrarAviso((poder.nome || "Poder do vilao") + " acertou!");
       tocarSom("dano");
       tremor = 18;
-      criarParticulas(joao.x + joao.w / 2, joao.y + joao.h / 2, poder.cor, 22);
-      resetarPersonagens();
+      criarParticulas(jogadorAtingido.x + jogadorAtingido.w / 2, jogadorAtingido.y + jogadorAtingido.h / 2, poder.cor, 22);
+      derrotarJogadores("Um jogador foi atingido!");
       return;
     }
 
@@ -3982,7 +4060,7 @@ function tratarColisaoVilao(jogador, vilao) {
     tocarSom("dano");
     tremor = 22;
     criarParticulas(vilao.x + vilao.w / 2, vilao.y + vilao.h / 2, "#ef476f", 26);
-    resetarPersonagens();
+    derrotarJogadores("Um jogador encostou no chefão!");
     return;
   }
 
@@ -4009,7 +4087,7 @@ function tratarColisaoVilao(jogador, vilao) {
   tocarSom("dano");
   tremor = 18;
   criarParticulas(vilao.x + vilao.w / 2, vilao.y + vilao.h / 2, "#ef476f", 18);
-  resetarPersonagens();
+  derrotarJogadores("Um jogador foi atingido pelo vilão!");
 }
 
 function coletarMoedas() {
@@ -4495,9 +4573,12 @@ function loop() {
   }
 
   atualizarPlataformasMoveis();
-  moverPersonagem(joao, ["a", "ArrowLeft"], ["d", "ArrowRight"], ["w", "ArrowUp"]);
-  atualizarGolpeJogador();
+  moverPersonagem(joao, ["a", "ArrowLeft"], ["d", "ArrowRight"], ["w", "ArrowUp"], ["s", "ArrowDown"]);
+  if (multiplayerAtivo) moverPersonagem(jogador2, ["j"], ["l"], ["i"], ["k"]);
+  atualizarGolpeJogador(joao, ["x", "X"]);
+  if (multiplayerAtivo) atualizarGolpeJogador(jogador2, ["o", "O"]);
   tocarArmadilhasOcultas(joao);
+  if (multiplayerAtivo) tocarArmadilhasOcultas(jogador2);
 
   atualizarPoderNeymar();
   atualizarPoderGoku();
@@ -4507,6 +4588,7 @@ function loop() {
   atualizarPoderEsqueleto();
   atualizarPoderSilvio();
   atualizarInimigos();
+  if (multiplayerAtivo) fases[faseAtual].inimigos.forEach(inimigo => tratarColisaoVilao(jogador2, inimigo));
   lancarPlacaInjusticaGlobal();
   atualizarPoderes();
   atualizarTimerFaseBonus();
@@ -4522,6 +4604,10 @@ function loop() {
   atualizarMeteoros();
   tocarLava(joao);
   tocarTachas(joao);
+  if (multiplayerAtivo) {
+    tocarLava(jogador2);
+    tocarTachas(jogador2);
+  }
   coletarMoedas();
   coletarDiamantes();
   atualizarPremioSilvio();
@@ -4544,6 +4630,7 @@ function loop() {
   }
   desenharFase();
   desenharBoneco(joao);
+  if (multiplayerAtivo) desenharJogador2();
   desenharParticulas();
   desenharHUD(fases[faseAtual]);
   desenharBannerFase();
