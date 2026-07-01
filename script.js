@@ -26,6 +26,7 @@ let faseBonusTimer = 480;
 let faseBonusConcluida = false;
 let pausadoAntesLoja = false;
 let multiplayerAtivo = false;
+let personagem2Atual = "luquinhas";
 let carteira = carregarCarteira();
 let moedasLoja = carteira.moedas;
 let diamantes = carteira.diamantes;
@@ -80,6 +81,7 @@ const loja = document.getElementById("loja");
 const saldoLoja = document.getElementById("saldoLoja");
 const avisoLoja = document.getElementById("avisoLoja");
 const botaoMultiplayer = document.getElementById("botaoMultiplayer");
+const player2Character = document.getElementById("player2Character");
 
 function carregarCarteira() {
   const padrao = { moedas: 0, diamantes: 0, inventario: { vidas: 0, segundosExtras: 0 } };
@@ -271,6 +273,29 @@ const personagensDisponiveis = {
   silvioSantos: { nome: "Silvio Santos", camisa: "#1d3557", calca: "#111827", cabelo: "#d0d7de", avatar: "silvioSantos", numero: "" }
 };
 
+function selecionarPersonagem2(id) {
+  const idValido = personagensDisponiveis[id] ? id : "luquinhas";
+  const escolhido = personagensDisponiveis[idValido];
+  personagem2Atual = idValido;
+  jogador2.nome = "P2 " + escolhido.nome;
+  jogador2.corCamisa = escolhido.camisa;
+  jogador2.corCalca = escolhido.calca;
+  jogador2.cabelo = escolhido.cabelo;
+  jogador2.avatar = escolhido.avatar;
+  jogador2.numero = escolhido.numero;
+  jogador2.grande = false;
+  jogador2.nuvem = false;
+  jogador2.superSayajin = false;
+  jogador2.montado = false;
+  jogador2.montaria = null;
+  jogador2.superMario = false;
+  if (player2Character && player2Character.value !== idValido) player2Character.value = idValido;
+  if (multiplayerAtivo) {
+    resetarPersonagens();
+    mostrarAviso("Jogador 2 escolheu " + escolhido.nome + "!");
+  }
+}
+
 function selecionarPersonagem(id) {
   const idValido = personagensDisponiveis[id] ? id : "joao";
   const escolhido = personagensDisponiveis[idValido];
@@ -312,6 +337,11 @@ function selecionarPersonagem(id) {
 }
 
 selecionarPersonagem("joao");
+selecionarPersonagem2("luquinhas");
+
+if (player2Character) {
+  player2Character.addEventListener("change", event => selecionarPersonagem2(event.target.value));
+}
 
 const fases = [
   {
@@ -4737,7 +4767,7 @@ function loop() {
   }
   desenharFase();
   desenharBoneco(joao);
-  if (multiplayerAtivo) desenharJogador2();
+  if (multiplayerAtivo) desenharBoneco(jogador2);
   desenharParticulas();
   desenharHUD(fases[faseAtual]);
   desenharBannerFase();
