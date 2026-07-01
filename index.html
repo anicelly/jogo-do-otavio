@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reino Pixel Extremo</title>
-  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
   <main class="app">
@@ -26,10 +26,28 @@
       <div class="status">
         <strong id="mensagem">Fase 1</strong>
         <div class="actions">
+          <button type="button" onclick="alternarLoja()" id="botaoLoja">Loja</button>
           <button type="button" onclick="alternarSom()" id="botaoSom">Som: ligado</button>
           <button type="button" onclick="reiniciarJogo()">Reiniciar</button>
         </div>
       </div>
+    </section>
+
+    <section class="shop" id="loja" aria-label="Loja de sobrevivência" hidden>
+      <div class="shop-heading">
+        <div>
+          <span class="kicker">Mercado do reino</span>
+          <h2>Loja de Sobrevivência</h2>
+          <p id="saldoLoja">Carregando carteira...</p>
+        </div>
+        <button type="button" class="shop-close" onclick="alternarLoja()">Fechar</button>
+      </div>
+      <div class="shop-grid">
+        <article class="shop-card"><span class="shop-icon">♥</span><h3>Vida extra</h3><p>Evita um Game Over e devolve você à batalha.</p><button type="button" onclick="comprarItemLoja('vida')">30 moedas</button></article>
+        <article class="shop-card"><span class="shop-icon">+10</span><h3>Tempo extra</h3><p>Adiciona 10 segundos ao próximo combate de chefão.</p><button type="button" onclick="comprarItemLoja('tempo')">20 moedas</button></article>
+        <article class="shop-card featured"><span class="shop-icon">◆</span><h3>Kit sobrevivência</h3><p>Uma vida e mais 15 segundos para o próximo chefão.</p><button type="button" onclick="comprarItemLoja('kit')">3 diamantes</button></article>
+      </div>
+      <p class="shop-feedback" id="avisoLoja" aria-live="polite"></p>
     </section>
 
     <section class="touch-controls" aria-label="Controles para celular">
@@ -66,6 +84,6 @@
     </section>
   </main>
 
-  <script src="script.js?v=28"></script>
+  <script src="script.js?v=29"></script>
 </body>
 </html>

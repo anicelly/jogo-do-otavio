@@ -60,6 +60,21 @@ h1 {
   text-shadow: 0 5px 0 #05070a, 0 0 28px rgba(247, 201, 72, 0.18);
 }
 
+h2, h3, p { margin-top: 0; }
+.shop { margin-top: 14px; padding: 20px; border: 1px solid #755b18; border-radius: 10px; background: linear-gradient(145deg, rgba(38,31,18,.98), rgba(20,24,32,.98)); box-shadow: 0 24px 70px rgba(0,0,0,.42); }
+.shop[hidden] { display: none; }
+.shop-heading { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
+.shop-heading h2 { margin-bottom: 6px; color: var(--gold); font-size: clamp(1.5rem, 4vw, 2.35rem); }
+.shop-heading p, .shop-card p { color: var(--muted); }
+.shop-close { background: linear-gradient(180deg, #394557, #222b38); color: #fff; box-shadow: 0 5px 0 #080a0e; }
+.shop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.shop-card { padding: 18px; border: 1px solid var(--line); border-radius: 9px; background: rgba(34,43,56,.88); }
+.shop-card.featured { border-color: #8b6fd8; background: linear-gradient(145deg, rgba(77,54,124,.68), rgba(34,43,56,.9)); }
+.shop-card h3 { margin: 8px 0; color: #fff; }
+.shop-card p { min-height: 44px; margin-bottom: 16px; }
+.shop-icon { display: inline-grid; min-width: 48px; height: 48px; padding: 0 8px; place-items: center; border-radius: 8px; background: #111722; color: var(--gold); font-size: 1.35rem; font-weight: 900; }
+.shop-feedback { min-height: 24px; margin: 14px 0 0; color: var(--green); font-weight: 800; }
+
 .controls {
   display: flex;
   flex-wrap: wrap;
@@ -291,6 +306,8 @@ body.device-desktop .touch-pad {
 }
 
 @media (max-width: 720px) {
+  .shop-grid { grid-template-columns: 1fr; }
+  .shop-card p { min-height: 0; }
   .app {
     width: min(100vw, 720px);
     padding: 12px;

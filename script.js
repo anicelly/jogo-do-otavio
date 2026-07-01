@@ -22,6 +22,9 @@ let moedas = 0;
 let pontosDestruicao = 0;
 let comboDestruicao = 0;
 let comboDestruicaoTempo = 0;
+let faseBonusTimer = 480;
+let faseBonusConcluida = false;
+let pausadoAntesLoja = false;
 let carteira = carregarCarteira();
 let moedasLoja = carteira.moedas;
 let diamantes = carteira.diamantes;
@@ -71,6 +74,9 @@ let proximoPoderSilvio = "jequiti";
 const botaoSom = document.getElementById("botaoSom");
 const activePlayerLabel = document.getElementById("activePlayerLabel");
 const deviceMode = document.getElementById("deviceMode");
+const loja = document.getElementById("loja");
+const saldoLoja = document.getElementById("saldoLoja");
+const avisoLoja = document.getElementById("avisoLoja");
 
 function carregarCarteira() {
   const padrao = { moedas: 0, diamantes: 0, inventario: { vidas: 0, segundosExtras: 0 } };
@@ -96,6 +102,46 @@ function salvarCarteira() {
   } catch {
     // O jogo continua normalmente quando o navegador bloqueia armazenamento local.
   }
+}
+
+function atualizarPainelLoja() {
+  if (!saldoLoja) return;
+  saldoLoja.textContent = moedasLoja + " moedas • " + diamantes + " diamantes • " + inventarioLoja.vidas + " vidas • " + inventarioLoja.segundosExtras + "s guardados";
+}
+
+function alternarLoja() {
+  const abrindo = loja.hidden;
+  loja.hidden = !abrindo;
+  if (abrindo) {
+    pausadoAntesLoja = pausado;
+    pausado = true;
+    atualizarPainelLoja();
+    avisoLoja.textContent = "Compre melhorias permanentes com os prêmios das fases.";
+    loja.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } else {
+    pausado = pausadoAntesLoja;
+  }
+}
+
+function comprarItemLoja(item) {
+  const compras = {
+    vida: { moedas: 30, aplicar: () => inventarioLoja.vidas++ },
+    tempo: { moedas: 20, aplicar: () => inventarioLoja.segundosExtras += 10 },
+    kit: { diamantes: 3, aplicar: () => { inventarioLoja.vidas++; inventarioLoja.segundosExtras += 15; } }
+  };
+  const compra = compras[item];
+  if (!compra) return;
+  if ((compra.moedas || 0) > moedasLoja || (compra.diamantes || 0) > diamantes) {
+    avisoLoja.textContent = "Saldo insuficiente. Destrua objetos e colete prêmios.";
+    return;
+  }
+  moedasLoja -= compra.moedas || 0;
+  diamantes -= compra.diamantes || 0;
+  compra.aplicar();
+  salvarCarteira();
+  atualizarPainelLoja();
+  avisoLoja.textContent = "Compra concluída e salva no inventário!";
+  tocarSom("moeda");
 }
 
 function detectarDispositivo() {
@@ -771,9 +817,8 @@ fases.forEach((fase, indice) => {
     fase.premiosDiamante = [];
     fase.mufasa = null;
     fase.destrutiveis = [
-      { tipo: "barrilQuebravel", x: 154, y: 444, w: 36, h: 42, vida: 2, vidaMax: 2, quebrado: false },
-      { tipo: "carroQuebravel", x: 350, y: 408, w: 260, h: 78, vida: 12, vidaMax: 12, quebrado: false },
-      { tipo: "barrilQuebravel", x: 770, y: 444, w: 36, h: 42, vida: 2, vidaMax: 2, quebrado: false }
+      { tipo: "barrilQuebravel", x: 730, y: 418, w: 58, h: 68, vida: 6, vidaMax: 6, quebrado: false },
+      { tipo: "carroQuebravel", x: 310, y: 388, w: 340, h: 98, vida: 12, vidaMax: 12, quebrado: false }
     ];
   }
 });
@@ -979,8 +1024,11 @@ function atualizarTimerChefe() {
     chefeTimerAlvo = alvo;
     chefeTimerAtivo = true;
     const bonusFase = fases[faseAtual].bonusTempoChefe || 0;
-    chefeTimer = 2700 + bonusFase * 60;
-    mostrarAviso("Derrote todos os chefões em " + (45 + bonusFase) + " segundos!");
+    const extraInventario = Math.min(30, inventarioLoja.segundosExtras);
+    inventarioLoja.segundosExtras -= extraInventario;
+    if (extraInventario > 0) salvarCarteira();
+    chefeTimer = 2700 + (bonusFase + extraInventario) * 60;
+    mostrarAviso("Derrote todos os chefões em " + (45 + bonusFase + extraInventario) + " segundos!");
   }
 
   chefeTimerAlvo = chefesVivos[0];
@@ -988,12 +1036,45 @@ function atualizarTimerChefe() {
   chefeTimer--;
 
   if (chefeTimer <= 0) {
+    if (inventarioLoja.vidas > 0) {
+      inventarioLoja.vidas--;
+      chefeTimer = 1200;
+      salvarCarteira();
+      resetarPersonagens();
+      mostrarAviso("VIDA EXTRA! Você ganhou mais 20 segundos.");
+      return;
+    }
     gameOver = true;
     pausado = false;
     tocarSom("dano");
     tremor = 30;
     mensagem.innerText = "Game over! O vilao venceu.";
   }
+}
+
+function atualizarTimerFaseBonus() {
+  const fase = fases[faseAtual];
+  if (!fase.bonus || faseBonusConcluida) return;
+  const restantes = fase.destrutiveis.filter(objeto => !objeto.quebrado);
+  if (restantes.length === 0) {
+    faseBonusConcluida = true;
+    pontosDestruicao += 2500;
+    mostrarAviso("DEMOLIÇÃO COMPLETA! Portal liberado e +2500 pontos!");
+    tocarSom("vitoria");
+    return;
+  }
+  faseBonusTimer--;
+  if (faseBonusTimer > 0) return;
+  if (inventarioLoja.vidas > 0) {
+    inventarioLoja.vidas--;
+    faseBonusTimer = 1200;
+    salvarCarteira();
+    mostrarAviso("VIDA EXTRA! Mais 20 segundos para demolir!");
+    return;
+  }
+  gameOver = true;
+  mensagem.innerText = "Tempo esgotado na fase bônus.";
+  tocarSom("dano");
 }
 
 function iniciarAudio() {
@@ -1220,7 +1301,7 @@ function resetarPersonagens() {
   poderSilvioCooldown = 0;
   proximoPoderSilvio = "jequiti";
 
-  joao.x = 52;
+  joao.x = fase?.bonus ? 842 : 52;
   joao.y = 422;
   joao.velX = 0;
   joao.velY = 0;
@@ -1235,6 +1316,7 @@ function resetarPersonagens() {
   joao.agachado = false;
   joao.ataqueTempo = 0;
   joao.ataqueCooldown = 0;
+  joao.direcao = fase?.bonus ? -1 : 1;
   joao.h = joao.alturaNormal;
 
 }
@@ -1404,16 +1486,36 @@ function desenharFundo(fase) {
   }
 
   if (fase.tema === "garagemBonus") {
-    ctx.fillStyle = "#18222d";
-    ctx.fillRect(0, 88, canvas.width, 330);
-    ctx.fillStyle = "#ffd43b";
-    for (let x = 0; x < canvas.width; x += 80) ctx.fillRect(x, 442, 42, 8);
+    ctx.fillStyle = "#83c5ff";
+    ctx.fillRect(0, 0, canvas.width, 230);
+    ctx.fillStyle = "#495b83";
+    for (let x = 0; x < canvas.width; x += 74) {
+      const altura = 88 + (x * 7) % 96;
+      ctx.fillRect(x, 230 - altura, 62, altura);
+      ctx.fillStyle = "#ffd166";
+      for (let janelaY = 230 - altura + 14; janelaY < 214; janelaY += 22) {
+        for (let janelaX = x + 9; janelaX < x + 54; janelaX += 18) ctx.fillRect(janelaX, janelaY, 8, 10);
+      }
+      ctx.fillStyle = "#495b83";
+    }
+    ctx.fillStyle = "#176b87";
+    ctx.fillRect(0, 230, canvas.width, 104);
+    ctx.fillStyle = "#8ecae6";
+    for (let onda = 0; onda < canvas.width; onda += 48) ctx.fillRect(onda, 250 + (onda % 3) * 12, 30, 4);
+    ctx.fillStyle = "#b08968";
+    ctx.fillRect(0, 334, canvas.width, 152);
+    ctx.strokeStyle = "#7f5539";
+    ctx.lineWidth = 2;
+    for (let x = 0; x < canvas.width; x += 64) {
+      ctx.beginPath(); ctx.moveTo(x, 334); ctx.lineTo(x - 54, 486); ctx.stroke();
+    }
+    for (let y = 360; y < 486; y += 34) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
     ctx.fillStyle = "#7bdff2";
-    ctx.font = "bold 28px monospace";
-    ctx.fillText("DESAFIO BÔNUS DE DEMOLIÇÃO", 244, 142);
+    ctx.font = "bold 25px monospace";
+    ctx.fillText("DEMOLIÇÃO À BEIRA-MAR", 318, 116);
     ctx.fillStyle = "#f7f3de";
-    ctx.font = "18px monospace";
-    ctx.fillText("GOLPEIE O CARRO COM X • DESTRUA PARA LIBERAR A SAÍDA", 176, 176);
+    ctx.font = "bold 16px monospace";
+    ctx.fillText("8 SEGUNDOS • CARRO + BARRIL", 368, 150);
   }
 }
 
@@ -1694,17 +1796,28 @@ function desenharDestrutiveis(fase) {
       const dano = 1 - objeto.vida / objeto.vidaMax;
       const topoX = objeto.x + objeto.w * 0.22;
       const topoW = objeto.w * 0.56;
-      ctx.fillStyle = "#d90429";
+      ctx.fillStyle = "#aeb8c4";
       ctx.fillRect(objeto.x, objeto.y + objeto.h * 0.34 + dano * 5, objeto.w, objeto.h * 0.48 - dano * 4);
+      ctx.fillStyle = "#d8dee6";
       ctx.fillRect(topoX, objeto.y + dano * 3, topoW, objeto.h * 0.4 - dano * 3);
-      ctx.fillStyle = "#74c0fc";
+      ctx.fillStyle = "#406882";
       ctx.fillRect(objeto.x + objeto.w * 0.29, objeto.y + 7, objeto.w * 0.18, objeto.h * 0.23);
       ctx.fillRect(objeto.x + objeto.w * 0.52, objeto.y + 7, objeto.w * 0.16, objeto.h * 0.23);
+      ctx.fillStyle = "#343a40";
+      ctx.fillRect(objeto.x + objeto.w * 0.34, objeto.y + objeto.h * 0.46, objeto.w * 0.32, objeto.h * 0.2);
+      ctx.fillStyle = "#8f9aa8";
+      for (let grade = 0; grade < 6; grade++) ctx.fillRect(objeto.x + objeto.w * (0.365 + grade * 0.047), objeto.y + objeto.h * 0.49, 3, objeto.h * 0.14);
+      ctx.fillStyle = "#fff3bf";
+      ctx.fillRect(objeto.x + objeto.w * 0.08, objeto.y + objeto.h * 0.46, objeto.w * 0.18, objeto.h * 0.13);
+      ctx.fillRect(objeto.x + objeto.w * 0.74, objeto.y + objeto.h * 0.46, objeto.w * 0.18, objeto.h * 0.13);
       ctx.fillStyle = "#111111";
       ctx.fillRect(objeto.x + objeto.w * 0.12, objeto.y + objeto.h * 0.72, objeto.w * 0.2, objeto.h * 0.24);
       ctx.fillRect(objeto.x + objeto.w * 0.68, objeto.y + objeto.h * 0.72, objeto.w * 0.2, objeto.h * 0.24);
-      ctx.fillStyle = "#ffd43b";
-      ctx.fillRect(objeto.x + 2, objeto.y + 20, 8, 7);
+      ctx.fillStyle = "#14213d";
+      ctx.fillRect(objeto.x + objeto.w * 0.43, objeto.y + objeto.h * 0.67, objeto.w * 0.14, objeto.h * 0.14);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold " + Math.max(7, Math.round(objeto.h * 0.08)) + "px monospace";
+      ctx.fillText("OTAVIO", objeto.x + objeto.w * 0.445, objeto.y + objeto.h * 0.77);
       if (objeto.vida < objeto.vidaMax) {
         ctx.strokeStyle = "#fff3bf";
         ctx.lineWidth = 2;
@@ -2910,6 +3023,13 @@ function desenharHUD(fase) {
     ctx.fillText("CARRO: +" + fase.bonusTempoChefe + "s", 740, 68);
   }
 
+  if (fase.bonus) {
+    const segundosBonus = Math.max(0, Math.ceil(faseBonusTimer / 60));
+    ctx.fillStyle = segundosBonus <= 10 ? "#ef476f" : "#ffd43b";
+    ctx.font = "bold 24px monospace";
+    ctx.fillText("BÔNUS: " + segundosBonus + "s", 500, 68);
+  }
+
   if (joao.avatar === "goku" && joao.nuvem) {
     const energia = Math.round((joao.energiaVoo / ENERGIA_MAXIMA_VOO_GOKU) * 100);
     ctx.fillStyle = energia <= 20 ? "#ef476f" : "#74c0fc";
@@ -3462,7 +3582,7 @@ function atualizarGolpeJogador() {
   if (!jogoIniciado || pausado || gameOver || venceu || joao.ataqueCooldown > 0 || !teclaAtiva(["x", "X"])) return;
 
   joao.ataqueTempo = 12;
-  joao.ataqueCooldown = 22;
+  joao.ataqueCooldown = fase.bonus ? 8 : 22;
   const alcance = {
     x: joao.direcao > 0 ? joao.x + joao.w - 2 : joao.x - 54,
     y: joao.y + 8,
@@ -4123,9 +4243,9 @@ function verificarPortal() {
 
   if (colisao(joao, fase.portal)) {
     if (fase.bonus) {
-      const carro = fase.destrutiveis.find(objeto => objeto.tipo === "carroQuebravel");
-      if (carro && !carro.quebrado) {
-        mostrarAviso("Destrua o carro para liberar a próxima fase!");
+      const pendentes = fase.destrutiveis.filter(objeto => !objeto.quebrado);
+      if (pendentes.length > 0) {
+        mostrarAviso("Destrua o carro e o barril para liberar a próxima fase!");
         return;
       }
       if (fases[faseAtual + 1]) {
@@ -4139,7 +4259,17 @@ function verificarPortal() {
       return;
     }
 
-    mostrarAviso("Troféu conquistado: " + fase.campeonato.nome + "!");
+    let textoBonus = "";
+    if (!fase.bonus && !fase.bonusSobrevivenciaColetado && faseAtual >= 4) {
+      const premioSobrevivencia = 8 + faseAtual * 2;
+      moedas += premioSobrevivencia;
+      moedasLoja += premioSobrevivencia;
+      if (faseAtual % 3 === 0) diamantes++;
+      fase.bonusSobrevivenciaColetado = true;
+      salvarCarteira();
+      textoBonus = " Bônus de sobrevivência: +" + premioSobrevivencia + " moedas" + (faseAtual % 3 === 0 ? " e +1 diamante!" : "!");
+    }
+    mostrarAviso("Troféu conquistado: " + fase.campeonato.nome + "!" + textoBonus);
 
     faseAtual++;
 
@@ -4154,7 +4284,7 @@ function verificarPortal() {
       tocarSom("portal");
       criarParticulas(fase.portal.x + 28, fase.portal.y + 30, "#c77dff", 26);
       resetarPersonagens();
-      mostrarAviso("Nova fase desbloqueada!");
+      mostrarAviso(textoBonus || "Nova fase desbloqueada!");
     }
   }
 }
@@ -4259,6 +4389,8 @@ function reiniciarJogo() {
   pontosDestruicao = 0;
   comboDestruicao = 0;
   comboDestruicaoTempo = 0;
+  faseBonusTimer = 480;
+  faseBonusConcluida = false;
   yoshis = 0;
   venceu = false;
   gameOver = false;
@@ -4272,6 +4404,7 @@ function reiniciarJogo() {
 
   fases.forEach(fase => {
     fase.bonusTempoChefe = 0;
+    fase.bonusSobrevivenciaColetado = false;
     resetarPlataformasMoveis(fase);
     fase.moedas.forEach(m => {
       m.coletada = false;
@@ -4376,6 +4509,11 @@ function loop() {
   atualizarInimigos();
   lancarPlacaInjusticaGlobal();
   atualizarPoderes();
+  atualizarTimerFaseBonus();
+  if (gameOver) {
+    requestAnimationFrame(loop);
+    return;
+  }
   atualizarTimerChefe();
   if (gameOver) {
     requestAnimationFrame(loop);
@@ -4415,5 +4553,6 @@ function loop() {
 }
 
 mensagem.innerText = fases[faseAtual].nome;
+atualizarPainelLoja();
 resetarPersonagens();
 loop();
