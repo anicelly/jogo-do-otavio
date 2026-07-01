@@ -185,6 +185,9 @@ window.addEventListener("resize", aplicarModoDispositivo);
 const controlesMobile = { left: "a", jump: "w", right: "d", down: "s", attack: "x" };
 
 document.addEventListener("keydown", event => {
+  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter"].includes(event.key) && jogoIniciado) {
+    event.preventDefault();
+  }
   iniciarAudio();
   if (gameOver && (event.key === "Enter" || event.key === " ")) {
     reiniciarJogo();
@@ -4710,10 +4713,13 @@ function loop() {
   }
 
   atualizarPlataformasMoveis();
-  moverPersonagem(joao, ["a", "ArrowLeft"], ["d", "ArrowRight"], ["w", "ArrowUp"], ["s", "ArrowDown"]);
-  if (multiplayerAtivo) moverPersonagem(jogador2, ["j"], ["l"], ["i"], ["k"]);
-  atualizarGolpeJogador(joao, ["x", "X"]);
-  if (multiplayerAtivo) atualizarGolpeJogador(jogador2, ["o", "O"]);
+  const controlesP1 = multiplayerAtivo
+    ? { esquerda: ["a"], direita: ["d"], pulo: ["w"], baixo: ["s"], ataque: ["x", "X"] }
+    : { esquerda: ["a", "ArrowLeft"], direita: ["d", "ArrowRight"], pulo: ["w", "ArrowUp"], baixo: ["s", "ArrowDown"], ataque: ["x", "X"] };
+  moverPersonagem(joao, controlesP1.esquerda, controlesP1.direita, controlesP1.pulo, controlesP1.baixo);
+  if (multiplayerAtivo) moverPersonagem(jogador2, ["ArrowLeft"], ["ArrowRight"], ["ArrowUp"], ["ArrowDown"]);
+  atualizarGolpeJogador(joao, controlesP1.ataque);
+  if (multiplayerAtivo) atualizarGolpeJogador(jogador2, ["Enter"]);
   tocarArmadilhasOcultas(joao);
   if (multiplayerAtivo) tocarArmadilhasOcultas(jogador2);
 
