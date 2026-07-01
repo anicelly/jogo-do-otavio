@@ -19,6 +19,9 @@ musicaNeymarArquivo.volume = 0.58;
 const keys = {};
 let faseAtual = 0;
 let moedas = 0;
+let pontosDestruicao = 0;
+let comboDestruicao = 0;
+let comboDestruicaoTempo = 0;
 let carteira = carregarCarteira();
 let moedasLoja = carteira.moedas;
 let diamantes = carteira.diamantes;
@@ -666,6 +669,7 @@ const tiposArmadilha = [
 ];
 
 fases.forEach((fase, indice) => {
+  fase.bonusTempoChefe = 0;
   const campeonato = campeonatos[indice];
   fase.campeonato = campeonato;
   fase.nome = indice === 0
@@ -708,6 +712,7 @@ fases.forEach((fase, indice) => {
   const plataformasObjetos = plataformasFixas.slice().sort((a, b) => b.w - a.w);
   const plataformaBarril = plataformasObjetos[0] || fase.plataformas[0];
   const plataformaCarro = plataformasObjetos[1] || plataformaBarril;
+  const plataformaBarrilExtra = plataformasObjetos[2] || plataformaBarril;
   fase.destrutiveis = [
     {
       tipo: "barrilQuebravel",
@@ -727,6 +732,16 @@ fases.forEach((fase, indice) => {
       h: 42,
       vida: 4,
       vidaMax: 4,
+      quebrado: false
+    },
+    {
+      tipo: "barrilQuebravel",
+      x: Math.max(4, Math.min(canvas.width - 40, Math.round(plataformaBarrilExtra.x + plataformaBarrilExtra.w * 0.7))),
+      y: plataformaBarrilExtra.y - 42,
+      w: 36,
+      h: 42,
+      vida: 2,
+      vidaMax: 2,
       quebrado: false
     }
   ];
@@ -932,8 +947,9 @@ function atualizarTimerChefe() {
 
     chefeTimerAlvo = alvo;
     chefeTimerAtivo = true;
-    chefeTimer = 2700;
-    mostrarAviso("Derrote todos os chefões em 45 segundos!");
+    const bonusFase = fases[faseAtual].bonusTempoChefe || 0;
+    chefeTimer = 2700 + bonusFase * 60;
+    mostrarAviso("Derrote todos os chefões em " + (45 + bonusFase) + " segundos!");
   }
 
   chefeTimerAlvo = chefesVivos[0];
@@ -1631,9 +1647,10 @@ function desenharDestrutiveis(fase) {
       ctx.fillRect(objeto.x, objeto.y + 7, objeto.w, 5);
       ctx.fillRect(objeto.x, objeto.y + objeto.h - 12, objeto.w, 5);
     } else {
+      const dano = 1 - objeto.vida / objeto.vidaMax;
       ctx.fillStyle = "#d90429";
-      ctx.fillRect(objeto.x, objeto.y + 14, objeto.w, 22);
-      ctx.fillRect(objeto.x + 17, objeto.y + 3, 45, 18);
+      ctx.fillRect(objeto.x, objeto.y + 14 + dano * 5, objeto.w, 22 - dano * 4);
+      ctx.fillRect(objeto.x + 17, objeto.y + 3 + dano * 3, 45, 18 - dano * 3);
       ctx.fillStyle = "#74c0fc";
       ctx.fillRect(objeto.x + 23, objeto.y + 7, 16, 11);
       ctx.fillRect(objeto.x + 43, objeto.y + 7, 14, 11);
@@ -1642,6 +1659,17 @@ function desenharDestrutiveis(fase) {
       ctx.fillRect(objeto.x + 57, objeto.y + 32, 16, 10);
       ctx.fillStyle = "#ffd43b";
       ctx.fillRect(objeto.x + 2, objeto.y + 20, 8, 7);
+      if (objeto.vida < objeto.vidaMax) {
+        ctx.strokeStyle = "#fff3bf";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(objeto.x + 34, objeto.y + 5);
+        ctx.lineTo(objeto.x + 28, objeto.y + 13);
+        ctx.lineTo(objeto.x + 39, objeto.y + 19);
+        ctx.stroke();
+        ctx.fillStyle = "rgba(55, 58, 64, 0.72)";
+        ctx.fillRect(objeto.x + 51, objeto.y - 4 - dano * 7, 9, 9);
+      }
     }
     ctx.fillStyle = "rgba(0,0,0,0.7)";
     ctx.fillRect(objeto.x, objeto.y - 8, objeto.w, 5);
@@ -2819,12 +2847,21 @@ function desenharHUD(fase) {
   ctx.fillStyle = "#74c0fc";
   ctx.font = "15px monospace";
   ctx.fillText("Carteira: " + moedasLoja + " moedas | " + diamantes + " diamantes", 650, 40);
+  ctx.fillStyle = comboDestruicao > 1 ? "#ff922b" : "#f7f3de";
+  ctx.font = "bold 15px monospace";
+  ctx.fillText("DEMOLIÇÃO: " + pontosDestruicao + " pts" + (comboDestruicao > 1 ? "  COMBO x" + comboDestruicao : ""), 650, 92);
 
   if (chefeTimerAtivo && chefeTimer !== null) {
     const segundos = Math.max(0, Math.ceil(chefeTimer / 60));
     ctx.fillStyle = segundos <= 2 ? "#ef476f" : "#ff6b00";
     ctx.font = "18px monospace";
     ctx.fillText("CHEFÕES: " + segundos + "s", 570, 68);
+  }
+
+  if (fase.bonusTempoChefe > 0) {
+    ctx.fillStyle = "#51d88a";
+    ctx.font = "bold 14px monospace";
+    ctx.fillText("CARRO: +" + fase.bonusTempoChefe + "s", 740, 68);
   }
 
   if (joao.avatar === "goku" && joao.nuvem) {
@@ -3374,6 +3411,8 @@ function atualizarPoderSilvio() {
 function atualizarGolpeJogador() {
   if (joao.ataqueCooldown > 0) joao.ataqueCooldown--;
   if (joao.ataqueTempo > 0) joao.ataqueTempo--;
+  if (comboDestruicaoTempo > 0) comboDestruicaoTempo--;
+  else comboDestruicao = 0;
   if (!jogoIniciado || pausado || gameOver || venceu || joao.ataqueCooldown > 0 || !teclaAtiva(["x", "X"])) return;
 
   joao.ataqueTempo = 12;
@@ -3406,6 +3445,9 @@ function atualizarGolpeJogador() {
   const objeto = (fase.destrutiveis || []).find(item => !item.quebrado && colisao(alcance, item));
   if (objeto) {
     objeto.vida--;
+    comboDestruicao = comboDestruicaoTempo > 0 ? comboDestruicao + 1 : 1;
+    comboDestruicaoTempo = 120;
+    pontosDestruicao += 50 * comboDestruicao;
     criarParticulas(objeto.x + objeto.w / 2, objeto.y + objeto.h / 2, objeto.tipo === "carroQuebravel" ? "#d90429" : "#9c551f", 30);
     tocarSom("pisao");
     if (objeto.vida <= 0) {
@@ -3413,11 +3455,17 @@ function atualizarGolpeJogador() {
       const premioMoedas = objeto.tipo === "carroQuebravel" ? 10 : 3;
       moedas += premioMoedas;
       moedasLoja += premioMoedas;
-      if (objeto.tipo === "carroQuebravel") diamantes++;
+      if (objeto.tipo === "carroQuebravel") {
+        diamantes++;
+        const bonusSegundos = Math.min(25, 12 + faseAtual * 2);
+        fase.bonusTempoChefe = bonusSegundos;
+        if (chefeTimerAtivo && chefeTimer !== null) chefeTimer += bonusSegundos * 60;
+      }
+      pontosDestruicao += objeto.tipo === "carroQuebravel" ? 1000 : 250;
       salvarCarteira();
-      mostrarAviso(objeto.tipo === "carroQuebravel" ? "Carro destruído: +10 moedas e +1 diamante!" : "Barril quebrado: +3 moedas!");
+      mostrarAviso(objeto.tipo === "carroQuebravel" ? "CARRO DESTRUÍDO! +" + fase.bonusTempoChefe + "s contra o chefão!" : "Barril destruído: +250 pts e +3 moedas!");
     } else {
-      mostrarAviso("Continue golpeando! Resistência: " + objeto.vida + "/" + objeto.vidaMax);
+      mostrarAviso("COMBO x" + comboDestruicao + " | Resistência: " + objeto.vida + "/" + objeto.vidaMax);
     }
   }
 }
@@ -4078,7 +4126,7 @@ function telaGameOver() {
   desenharFundo(fases[faseAtual]);
   fases[faseAtual].plataformas.forEach(desenharPlataforma);
   desenharPainelCentral("GAME OVER", [
-    "Os chefões não foram derrotados em 45 segundos",
+    "Os chefões não foram derrotados no tempo disponível",
     "Pressione ENTER ou clique em Reiniciar",
     "CR7 grita SIUUUU, cresce e lança bicicletas"
   ], "#ef476f");
@@ -4152,6 +4200,9 @@ function desenharBannerFase() {
 function reiniciarJogo() {
   faseAtual = 0;
   moedas = 0;
+  pontosDestruicao = 0;
+  comboDestruicao = 0;
+  comboDestruicaoTempo = 0;
   yoshis = 0;
   venceu = false;
   gameOver = false;
@@ -4164,6 +4215,7 @@ function reiniciarJogo() {
   bannerFase = 160;
 
   fases.forEach(fase => {
+    fase.bonusTempoChefe = 0;
     resetarPlataformasMoveis(fase);
     fase.moedas.forEach(m => {
       m.coletada = false;
