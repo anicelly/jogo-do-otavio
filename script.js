@@ -265,7 +265,8 @@ const fases = [
     ],
     inimigos: [
       criarVilao("soldado", 216, 438, 3.2, 160, 394),
-      criarVilao("cavaleiro", 612, 438, 2.5, 520, 820)
+      criarVilao("cavaleiro", 612, 438, 2.5, 520, 820),
+      criarVilao("esqueleto", 754, 428, 2.0, 660, 864)
     ]
   },
   {
@@ -641,7 +642,8 @@ function criarVilao(tipo, x, y, vel, min, max) {
     cavaleiro: { w: 48, h: 50 },
     messi: { w: 42, h: 58 },
     lobo: { w: 58, h: 38 },
-    meninoRoblox: { w: 46, h: 58 }
+    meninoRoblox: { w: 46, h: 58 },
+    esqueleto: { w: 48, h: 58 }
   };
   const medida = medidas[tipo] || { w: 42, h: 42 };
 
@@ -655,7 +657,9 @@ function criarVilao(tipo, x, y, vel, min, max) {
     min,
     max,
     direcao: vel >= 0 ? 1 : -1,
-    morto: false
+    morto: false,
+    ataqueOffset: tipo === "esqueleto" ? Math.floor(x) % 120 : 0,
+    golpeAcertado: -1
   };
 }
 
@@ -1802,7 +1806,60 @@ function desenharVilao(i) {
     return;
   }
 
+  if (i.tipo === "esqueleto") {
+    desenharEsqueletoEspadachim(i);
+    return;
+  }
+
   desenharSoldado(i);
+}
+
+function desenharEsqueletoEspadachim(i) {
+  const ciclo = (frame + i.ataqueOffset) % 120;
+  const golpe = ciclo < 14 ? 1 : ciclo >= 22 && ciclo < 36 ? 2 : 0;
+  const alcance = golpe ? 34 : 12;
+
+  ctx.save();
+  ctx.translate(i.direcao < 0 ? i.x + i.w : i.x, i.y);
+  if (i.direcao < 0) ctx.scale(-1, 1);
+
+  ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
+  ctx.fillRect(2, 54, 48, 5);
+  ctx.fillStyle = "#f7f3de";
+  ctx.fillRect(12, 2, 27, 22);
+  ctx.fillRect(8, 8, 35, 11);
+  ctx.fillStyle = "#111111";
+  ctx.fillRect(16, 9, 6, 6);
+  ctx.fillRect(30, 9, 6, 6);
+  ctx.fillRect(21, 18, 12, 4);
+  ctx.fillStyle = "#ef233c";
+  ctx.fillRect(17, 10, 4, 4);
+  ctx.fillRect(31, 10, 4, 4);
+
+  ctx.fillStyle = "#d0d7de";
+  ctx.fillRect(21, 24, 10, 21);
+  ctx.fillRect(9, 28, 8, 19);
+  ctx.fillRect(35, 28, 8, 19);
+  ctx.fillRect(13, 45, 8, 12);
+  ctx.fillRect(31, 45, 8, 12);
+  ctx.fillStyle = "#c2410c";
+  ctx.fillRect(31, 25, 14, 21);
+  ctx.fillStyle = "#f97316";
+  ctx.fillRect(35, 29, 7, 13);
+
+  ctx.save();
+  ctx.translate(9, 34);
+  ctx.rotate(golpe === 1 ? -1.15 : golpe === 2 ? -0.25 : 0.55);
+  ctx.fillStyle = "#c2410c";
+  ctx.fillRect(-2, -2, 14, 6);
+  ctx.fillStyle = "#e9ecef";
+  ctx.fillRect(9, -1, 31 + alcance, 4);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(12, -1, 27 + alcance, 1);
+  ctx.restore();
+  ctx.restore();
+
+  desenharEtiqueta(golpe ? "ESPADADA " + golpe + "/2" : "Esqueleto", i.x + i.w / 2, i.y - 10);
 }
 
 function desenharBossSupremo(i, copia = false) {
@@ -2349,6 +2406,12 @@ function atualizarInimigos() {
 
     if (i.tipo === "bossSupremo") atualizarClonesBossSupremo(i);
 
+    if (i.tipo === "esqueleto") {
+      atualizarEspadadasEsqueleto(i);
+      tratarColisaoVilao(joao, i);
+      return;
+    }
+
     const ajusteVilao = i.tipo === "messi" ? AJUSTE_MESSI_JOGAVEL : i.tipo === "meninoRoblox" ? 1.35 : 1;
     i.x += i.vel * multiplicador * AJUSTE_VELOCIDADE_JOGAVEL * ajusteVilao;
 
@@ -2361,6 +2424,36 @@ function atualizarInimigos() {
 
     tratarColisaoVilao(joao, i);
   });
+}
+
+function atualizarEspadadasEsqueleto(esqueleto) {
+  const ciclo = (frame + esqueleto.ataqueOffset) % 120;
+  const golpe = ciclo < 14 ? 1 : ciclo >= 22 && ciclo < 36 ? 2 : 0;
+
+  if (!golpe) {
+    esqueleto.x += esqueleto.vel * dificuldadeFinal() * AJUSTE_VELOCIDADE_JOGAVEL;
+    if (esqueleto.x <= esqueleto.min || esqueleto.x >= esqueleto.max) esqueleto.vel *= -1;
+    esqueleto.direcao = esqueleto.vel >= 0 ? 1 : -1;
+    return;
+  }
+
+  esqueleto.direcao = joao.x + joao.w / 2 >= esqueleto.x + esqueleto.w / 2 ? 1 : -1;
+  const idGolpe = Math.floor((frame + esqueleto.ataqueOffset) / 120) * 2 + golpe;
+  const espada = {
+    x: esqueleto.direcao > 0 ? esqueleto.x + esqueleto.w - 4 : esqueleto.x - 50,
+    y: esqueleto.y + 12,
+    w: 54,
+    h: 38
+  };
+
+  if (esqueleto.golpeAcertado !== idGolpe && joao.invencivel <= 0 && colisao(joao, espada)) {
+    esqueleto.golpeAcertado = idGolpe;
+    mostrarAviso("O esqueleto acertou a espadada " + golpe + " de 2!");
+    tocarSom("dano");
+    tremor = 22;
+    criarParticulas(joao.x + joao.w / 2, joao.y + joao.h / 2, "#e9ecef", 28);
+    resetarPersonagens();
+  }
 }
 
 function atualizarClonesBossSupremo(boss) {
