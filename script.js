@@ -237,7 +237,8 @@ const fases = [
     ],
     inimigos: [
       criarVilao("soldado", 252, 438, 2.8, 214, 446),
-      criarVilao("cavaleiro", 614, 244, 1.8, 570, 700)
+      criarVilao("cavaleiro", 614, 244, 1.8, 570, 700),
+      criarVilao("chaves", 746, 426, 1.7, 690, 874)
     ]
   },
   {
@@ -643,7 +644,8 @@ function criarVilao(tipo, x, y, vel, min, max) {
     messi: { w: 42, h: 58 },
     lobo: { w: 58, h: 38 },
     meninoRoblox: { w: 46, h: 58 },
-    esqueleto: { w: 48, h: 58 }
+    esqueleto: { w: 48, h: 58 },
+    chaves: { w: 44, h: 60 }
   };
   const medida = medidas[tipo] || { w: 42, h: 42 };
 
@@ -659,7 +661,10 @@ function criarVilao(tipo, x, y, vel, min, max) {
     direcao: vel >= 0 ? 1 : -1,
     morto: false,
     ataqueOffset: tipo === "esqueleto" ? Math.floor(x) % 120 : 0,
-    golpeAcertado: -1
+    golpeAcertado: -1,
+    ataqueChaves: 0,
+    ultimoAtaqueChaves: -1,
+    ultimoSucoChaves: -1
   };
 }
 
@@ -1811,7 +1816,44 @@ function desenharVilao(i) {
     return;
   }
 
+  if (i.tipo === "chaves") {
+    desenharChavesPixel(i);
+    return;
+  }
+
   desenharSoldado(i);
+}
+
+function desenharChavesPixel(i) {
+  ctx.save();
+  ctx.translate(i.direcao < 0 ? i.x + i.w : i.x, i.y);
+  if (i.direcao < 0) ctx.scale(-1, 1);
+
+  ctx.fillStyle = "rgba(0, 0, 0, 0.26)";
+  ctx.fillRect(2, 56, 44, 5);
+  ctx.fillStyle = "#5c3b1e";
+  ctx.fillRect(9, 0, 27, 8);
+  ctx.fillRect(5, 7, 36, 7);
+  ctx.fillStyle = "#f1b48b";
+  ctx.fillRect(10, 13, 27, 19);
+  ctx.fillStyle = "#111111";
+  ctx.fillRect(15, 19, 4, 4);
+  ctx.fillRect(29, 19, 4, 4);
+  ctx.fillRect(21, 27, 9, 3);
+  ctx.fillStyle = "#d8c9a7";
+  ctx.fillRect(8, 33, 30, 18);
+  ctx.fillStyle = "#8b5a2b";
+  ctx.fillRect(8, 42, 30, 9);
+  ctx.fillStyle = "#d90429";
+  ctx.fillRect(19, 33, 7, 18);
+  ctx.fillStyle = "#f1b48b";
+  ctx.fillRect(2, 35, 7, 15);
+  ctx.fillRect(38, 35, 7, 15);
+  ctx.fillStyle = "#2f6f9f";
+  ctx.fillRect(11, 51, 10, 8);
+  ctx.fillRect(28, 51, 10, 8);
+  ctx.restore();
+  desenharEtiqueta("Chaves", i.x + i.w / 2, i.y - 10);
 }
 
 function desenharEsqueletoEspadachim(i) {
@@ -2412,6 +2454,12 @@ function atualizarInimigos() {
       return;
     }
 
+    if (i.tipo === "chaves") {
+      atualizarAtaquesChaves(i);
+      tratarColisaoVilao(joao, i);
+      return;
+    }
+
     const ajusteVilao = i.tipo === "messi" ? AJUSTE_MESSI_JOGAVEL : i.tipo === "meninoRoblox" ? 1.35 : 1;
     i.x += i.vel * multiplicador * AJUSTE_VELOCIDADE_JOGAVEL * ajusteVilao;
 
@@ -2424,6 +2472,54 @@ function atualizarInimigos() {
 
     tratarColisaoVilao(joao, i);
   });
+}
+
+function atualizarAtaquesChaves(chaves) {
+  chaves.x += chaves.vel * dificuldadeFinal() * AJUSTE_VELOCIDADE_JOGAVEL;
+  if (chaves.x <= chaves.min || chaves.x >= chaves.max) chaves.vel *= -1;
+  chaves.direcao = joao.x + joao.w / 2 >= chaves.x + chaves.w / 2 ? 1 : -1;
+
+  const cicloAtaque = Math.floor(frame / 180);
+  if (frame % 180 === 0 && chaves.ultimoAtaqueChaves !== cicloAtaque) {
+    chaves.ultimoAtaqueChaves = cicloAtaque;
+    const soltaBarril = chaves.ataqueChaves % 2 === 1;
+    chaves.ataqueChaves++;
+    poderes.push({
+      dono: "vilao",
+      tipo: soltaBarril ? "barrilChaves" : "sanduichePresunto",
+      nome: soltaBarril ? "barril do Chaves" : "sanduíche de presunto",
+      x: chaves.x + chaves.w / 2 + chaves.direcao * 20,
+      y: soltaBarril ? chaves.y + 21 : chaves.y + 27,
+      w: soltaBarril ? 34 : 30,
+      h: soltaBarril ? 36 : 16,
+      vx: chaves.direcao * (soltaBarril ? 4.6 : 6.8),
+      vy: 0,
+      cor: soltaBarril ? "#8b4513" : "#f4a261",
+      vida: 150
+    });
+    mostrarAviso(soltaBarril ? "Chaves soltou o barril onde ele vive!" : "Chaves lançou sanduíche de presunto!");
+    tocarSom(soltaBarril ? "pisao" : "gol");
+  }
+
+  const cicloSuco = Math.floor((frame + 90) / 180);
+  if ((frame + 90) % 180 === 0 && chaves.ultimoSucoChaves !== cicloSuco) {
+    chaves.ultimoSucoChaves = cicloSuco;
+    poderes.push({
+      dono: "vilao",
+      tipo: "sucoTamarindo",
+      nome: "vômito de suco de tamarindo",
+      x: chaves.x + chaves.w / 2 + chaves.direcao * 18,
+      y: chaves.y + 28,
+      w: 40,
+      h: 13,
+      vx: chaves.direcao * 5.3,
+      vy: 1.5,
+      cor: "#9c6644",
+      vida: 105
+    });
+    mostrarAviso("Chaves vomitou suco de tamarindo!");
+    tocarSom("dano");
+  }
 }
 
 function atualizarEspadadasEsqueleto(esqueleto) {
@@ -2728,6 +2824,41 @@ function atualizarPoderes() {
 
 function desenharPoderes() {
   poderes.forEach(poder => {
+    if (poder.tipo === "sanduichePresunto") {
+      ctx.fillStyle = "#e9c46a";
+      ctx.fillRect(poder.x, poder.y, poder.w, poder.h);
+      ctx.fillStyle = "#ef476f";
+      ctx.fillRect(poder.x + 3, poder.y + 6, poder.w - 6, 5);
+      ctx.fillStyle = "#fff3bf";
+      ctx.fillRect(poder.x + 4, poder.y + 2, poder.w - 8, 4);
+      ctx.strokeStyle = "#7f5539";
+      ctx.strokeRect(poder.x, poder.y, poder.w, poder.h);
+      return;
+    }
+
+    if (poder.tipo === "barrilChaves") {
+      ctx.fillStyle = "#5c2f12";
+      ctx.fillRect(poder.x, poder.y, poder.w, poder.h);
+      ctx.fillStyle = "#9c551f";
+      ctx.fillRect(poder.x + 5, poder.y + 3, poder.w - 10, poder.h - 6);
+      ctx.fillStyle = "#2b2118";
+      ctx.fillRect(poder.x, poder.y + 6, poder.w, 5);
+      ctx.fillRect(poder.x, poder.y + poder.h - 11, poder.w, 5);
+      ctx.fillStyle = "#d08c45";
+      ctx.fillRect(poder.x + 10, poder.y + 13, poder.w - 20, 10);
+      return;
+    }
+
+    if (poder.tipo === "sucoTamarindo") {
+      ctx.fillStyle = "rgba(156, 102, 68, 0.28)";
+      ctx.fillRect(poder.x - 5, poder.y - 4, poder.w + 10, poder.h + 8);
+      ctx.fillStyle = "#9c6644";
+      ctx.fillRect(poder.x, poder.y, poder.w, poder.h);
+      ctx.fillStyle = "#d4a373";
+      ctx.fillRect(poder.x + 5, poder.y + 2, poder.w - 12, 3);
+      return;
+    }
+
     if (poder.tipo === "bicicletaCR7") {
       ctx.save();
       ctx.translate(poder.x + poder.w / 2, poder.y + poder.h / 2);
@@ -3222,6 +3353,11 @@ function reiniciarJogo() {
       if (i.tipo === "bossSupremo") {
         i.clones = [];
         i.ultimoClone = null;
+      }
+      if (i.tipo === "chaves") {
+        i.ataqueChaves = 0;
+        i.ultimoAtaqueChaves = -1;
+        i.ultimoSucoChaves = -1;
       }
     });
     fase.yoshi.salvo = false;
