@@ -19,6 +19,10 @@ musicaNeymarArquivo.volume = 0.58;
 const keys = {};
 let faseAtual = 0;
 let moedas = 0;
+let carteira = carregarCarteira();
+let moedasLoja = carteira.moedas;
+let diamantes = carteira.diamantes;
+let inventarioLoja = carteira.inventario;
 let yoshis = 0;
 let venceu = false;
 let gameOver = false;
@@ -52,9 +56,44 @@ let genkiDamaCooldown = 0;
 let poderRobloxCooldown = 0;
 let proximoPoderRoblox = "celular";
 let poderCR7Cooldown = 0;
+let buffonTempo = 0;
+let proximoPoderCR7 = "bicicletaCR7";
+let poderChavesCooldown = 0;
+let poderChavesSucoCooldown = 90;
+let proximoPoderChaves = "sanduichePresunto";
+let poderEsqueletoCooldown = 0;
+let segundoCorteEsqueleto = 0;
+let poderSilvioCooldown = 0;
+let proximoPoderSilvio = "jequiti";
 const botaoSom = document.getElementById("botaoSom");
 const activePlayerLabel = document.getElementById("activePlayerLabel");
 const deviceMode = document.getElementById("deviceMode");
+
+function carregarCarteira() {
+  const padrao = { moedas: 0, diamantes: 0, inventario: { vidas: 0, segundosExtras: 0 } };
+  try {
+    const salva = JSON.parse(localStorage.getItem("reinoPixelCarteira") || "null");
+    if (!salva) return padrao;
+    return {
+      moedas: Number.isFinite(salva.moedas) ? Math.max(0, salva.moedas) : 0,
+      diamantes: Number.isFinite(salva.diamantes) ? Math.max(0, salva.diamantes) : 0,
+      inventario: {
+        vidas: Number.isFinite(salva.inventario?.vidas) ? Math.max(0, salva.inventario.vidas) : 0,
+        segundosExtras: Number.isFinite(salva.inventario?.segundosExtras) ? Math.max(0, salva.inventario.segundosExtras) : 0
+      }
+    };
+  } catch {
+    return padrao;
+  }
+}
+
+function salvarCarteira() {
+  try {
+    localStorage.setItem("reinoPixelCarteira", JSON.stringify({ moedas: moedasLoja, diamantes, inventario: inventarioLoja }));
+  } catch {
+    // O jogo continua normalmente quando o navegador bloqueia armazenamento local.
+  }
+}
 
 function detectarDispositivo() {
   const largura = Math.min(window.innerWidth, window.screen.width || window.innerWidth);
@@ -81,7 +120,7 @@ function aplicarModoDispositivo() {
 aplicarModoDispositivo();
 window.addEventListener("resize", aplicarModoDispositivo);
 
-const controlesMobile = { left: "a", jump: "w", right: "d", down: "s" };
+const controlesMobile = { left: "a", jump: "w", right: "d", down: "s", attack: "x" };
 
 document.addEventListener("keydown", event => {
   iniciarAudio();
@@ -164,12 +203,16 @@ const personagensDisponiveis = {
   miaw: { nome: "Miaw", camisa: "#ffd43b", calca: "#fff3bf", cabelo: "#ffd43b", avatar: "miaw", numero: "" },
   neymar: { nome: "Neymar", camisa: "#ffe066", calca: "#2457c5", cabelo: "#f7c948", avatar: "neymar", numero: "10" },
   goku: { nome: "Goku", camisa: "#ff7b00", calca: "#0b5ed7", cabelo: "#111111", avatar: "goku", numero: "" },
-  meninoRoblox: { nome: "Menino Roblox", camisa: "#e03131", calca: "#1971c2", cabelo: "#5c2e12", avatar: "meninoRoblox", numero: "R" }
+  meninoRoblox: { nome: "Menino Roblox", camisa: "#e03131", calca: "#1971c2", cabelo: "#5c2e12", avatar: "meninoRoblox", numero: "R" },
+  chaves: { nome: "Chaves", camisa: "#d8c9a7", calca: "#2f6f9f", cabelo: "#5c3b1e", avatar: "chaves", numero: "" },
+  esqueleto: { nome: "Esqueleto", camisa: "#f7f3de", calca: "#d0d7de", cabelo: "#111111", avatar: "esqueleto", numero: "" },
+  silvioSantos: { nome: "Silvio Santos", camisa: "#1d3557", calca: "#111827", cabelo: "#d0d7de", avatar: "silvioSantos", numero: "" }
 };
 
 function selecionarPersonagem(id) {
-  const escolhido = personagensDisponiveis[id] || personagensDisponiveis.joao;
-  personagemAtual = id;
+  const idValido = personagensDisponiveis[id] ? id : "joao";
+  const escolhido = personagensDisponiveis[idValido];
+  personagemAtual = idValido;
   musicaTimer = 0;
   notaMusica = 0;
   joao.nome = escolhido.nome;
@@ -178,6 +221,21 @@ function selecionarPersonagem(id) {
   joao.cabelo = escolhido.cabelo;
   joao.avatar = escolhido.avatar;
   joao.numero = escolhido.numero;
+  joao.nuvem = false;
+  joao.superSayajin = false;
+  joao.energiaVoo = ENERGIA_MAXIMA_VOO_GOKU;
+  joao.grande = false;
+  joao.poderTempo = 0;
+  poderChavesCooldown = 0;
+  poderChavesSucoCooldown = 90;
+  proximoPoderChaves = "sanduichePresunto";
+  poderEsqueletoCooldown = 0;
+  segundoCorteEsqueleto = 0;
+  poderCR7Cooldown = 0;
+  buffonTempo = 0;
+  proximoPoderCR7 = "bicicletaCR7";
+  poderSilvioCooldown = 0;
+  proximoPoderSilvio = "jequiti";
   sincronizarMusicaGoku(true);
   sincronizarMusicaNeymar(true);
 
@@ -190,9 +248,9 @@ selecionarPersonagem("joao");
 
 const fases = [
   {
-    nome: "Fase 1 - Menino do Roblox",
+    nome: "Fase 1 - Programa de Auditório",
     fundo: ["#77c8ff", "#9ee493"],
-    tema: "floresta",
+    tema: "auditorio",
     plataformas: [
       { x: 0, y: 486, w: 960, h: 54, tipo: "grama" },
       { x: 178, y: 386, w: 176, h: 24, tipo: "grama" },
@@ -210,7 +268,8 @@ const fases = [
       { x: 314, y: 354, coletado: false }
     ],
     inimigos: [
-      criarVilao("meninoRoblox", 416, 428, 1.65, 360, 650)
+      criarVilao("meninoRoblox", 416, 428, 1.65, 360, 650),
+      criarSilvioBoss(720, 420)
     ]
   },
   {
@@ -591,16 +650,86 @@ const campeonatos = [
   { nome: "Copa do Mundo", cor: "#ffd43b" }
 ];
 
+const tiposArmadilha = [
+  { tipo: "mina", nome: "Mina explosiva", cor: "#343a40" },
+  { tipo: "ratoeira", nome: "Ratoeira escondida", cor: "#adb5bd" },
+  { tipo: "mola", nome: "Mola surpresa", cor: "#ffd43b" },
+  { tipo: "veneno", nome: "Poça venenosa", cor: "#69db7c" },
+  { tipo: "fogo", nome: "Chama escondida", cor: "#ff6b00" },
+  { tipo: "armadilhaAco", nome: "Armadilha de aço", cor: "#ced4da" },
+  { tipo: "areia", nome: "Areia movediça", cor: "#d4a373" },
+  { tipo: "espinhos", nome: "Espinhos ocultos", cor: "#adb5bd" },
+  { tipo: "portalFalso", nome: "Portal falso", cor: "#c77dff" },
+  { tipo: "bomba", nome: "Bomba-relógio", cor: "#ef476f" },
+  { tipo: "fantasma", nome: "Fantasma do piso", cor: "#e9ecef" },
+  { tipo: "buraco", nome: "Buraco falso", cor: "#111111" }
+];
+
 fases.forEach((fase, indice) => {
   const campeonato = campeonatos[indice];
   fase.campeonato = campeonato;
-  fase.nome = "Fase " + (indice + 1) + " - " + campeonato.nome;
+  fase.nome = indice === 0
+    ? "Fase 1 - Programa de Auditório: Silvio Santos"
+    : "Fase " + (indice + 1) + " - " + campeonato.nome;
   fase.trofeu = {
     x: fase.portal.x + fase.portal.w / 2 - 18,
     y: fase.portal.y - 54,
     nome: campeonato.nome,
     cor: campeonato.cor
   };
+  const plataformaInicial = fase.plataformas.reduce((maior, plataforma) => plataforma.w > maior.w ? plataforma : maior, fase.plataformas[0]);
+  fase.mufasa = {
+    x: plataformaInicial.x + Math.max(8, Math.min(plataformaInicial.w - 72, Math.round(plataformaInicial.w * 0.18))),
+    y: plataformaInicial.y - 56,
+    w: 68,
+    h: 56,
+    salvo: false,
+    montadoPor: null
+  };
+  if (indice === 0) fase.premio50 = { x: 758, y: 430, w: 48, h: 24, ativo: false, coletado: false };
+  fase.tipoArmadilha = tiposArmadilha[indice];
+  const plataformasFixas = fase.plataformas.filter(plataforma => !plataforma.movel && plataforma.w >= 48);
+  fase.armadilhas = plataformasFixas.slice(0, 3).map((plataforma, armadilhaIndice) => ({
+    x: Math.round(plataforma.x + plataforma.w * (armadilhaIndice % 2 === 0 ? 0.58 : 0.36) - 14),
+    y: plataforma.y - 10,
+    w: 28,
+    h: 10,
+    revelada: false,
+    ativada: false,
+    ...fase.tipoArmadilha
+  }));
+  fase.premiosDiamante = [{
+    x: Math.max(48, fase.portal.x - 52),
+    y: Math.max(70, fase.portal.y - 30),
+    w: 24,
+    h: 28,
+    coletado: false
+  }];
+  const plataformasObjetos = plataformasFixas.slice().sort((a, b) => b.w - a.w);
+  const plataformaBarril = plataformasObjetos[0] || fase.plataformas[0];
+  const plataformaCarro = plataformasObjetos[1] || plataformaBarril;
+  fase.destrutiveis = [
+    {
+      tipo: "barrilQuebravel",
+      x: Math.round(plataformaBarril.x + plataformaBarril.w * 0.28),
+      y: plataformaBarril.y - 42,
+      w: 36,
+      h: 42,
+      vida: 2,
+      vidaMax: 2,
+      quebrado: false
+    },
+    {
+      tipo: "carroQuebravel",
+      x: Math.max(4, Math.min(canvas.width - 82, Math.round(plataformaCarro.x + plataformaCarro.w / 2 - 40))),
+      y: plataformaCarro.y - 42,
+      w: 80,
+      h: 42,
+      vida: 4,
+      vidaMax: 4,
+      quebrado: false
+    }
+  ];
 });
 
 // Reforcos nas cinco primeiras fases para elevar a dificuldade inicial.
@@ -627,12 +756,15 @@ function criarJogador(nome, x, corCamisa, corCalca, cabelo) {
     direcao: 1,
     invencivel: 0,
     montado: false,
+    montaria: null,
     grande: false,
     poderTempo: 0,
     nuvem: false,
     superSayajin: false,
     energiaVoo: ENERGIA_MAXIMA_VOO_GOKU,
     agachado: false,
+    ataqueTempo: 0,
+    ataqueCooldown: 0,
     alturaNormal: 58,
     alturaAgachado: 38
   };
@@ -663,8 +795,29 @@ function criarVilao(tipo, x, y, vel, min, max) {
     ataqueOffset: tipo === "esqueleto" ? Math.floor(x) % 120 : 0,
     golpeAcertado: -1,
     ataqueChaves: 0,
-    ultimoAtaqueChaves: -1,
-    ultimoSucoChaves: -1
+    cooldownAtaqueChaves: 0,
+    cooldownSucoChaves: 90
+  };
+}
+
+function criarSilvioBoss(x, y) {
+  return {
+    tipo: "silvioBoss",
+    nome: "Silvio Santos",
+    x,
+    y,
+    w: 48,
+    h: 66,
+    vel: 2.1,
+    min: 640,
+    max: 874,
+    direcao: -1,
+    vida: 7,
+    vidaMax: 7,
+    invencivel: 0,
+    morto: false,
+    cooldownPoder: 45,
+    proximoPoder: "jequiti"
   };
 }
 
@@ -746,7 +899,7 @@ function dificuldadeFinal() {
 }
 
 function ehChefeVilao(vilao) {
-  return vilao.tipo === "chefe" || vilao.tipo === "rei" || vilao.tipo === "cellbesta" || vilao.tipo === "bossSupremo";
+  return vilao.tipo === "chefe" || vilao.tipo === "rei" || vilao.tipo === "cellbesta" || vilao.tipo === "bossSupremo" || vilao.tipo === "silvioBoss";
 }
 
 function chefesVivosDaFase() {
@@ -1001,6 +1154,7 @@ function desenharParticulas() {
 function resetarPersonagens() {
   const fase = fases[faseAtual];
   if (fase && fase.yoshi) fase.yoshi.montadoPor = null;
+  if (fase && fase.mufasa) fase.mufasa.montadoPor = null;
   if (fase) resetarPlataformasMoveis(fase);
   meteoros.length = 0;
   poderes.length = 0;
@@ -1009,6 +1163,15 @@ function resetarPersonagens() {
   poderRobloxCooldown = 0;
   proximoPoderRoblox = "celular";
   poderCR7Cooldown = 0;
+  buffonTempo = 0;
+  proximoPoderCR7 = "bicicletaCR7";
+  poderChavesCooldown = 0;
+  poderChavesSucoCooldown = 90;
+  proximoPoderChaves = "sanduichePresunto";
+  poderEsqueletoCooldown = 0;
+  segundoCorteEsqueleto = 0;
+  poderSilvioCooldown = 0;
+  proximoPoderSilvio = "jequiti";
 
   joao.x = 52;
   joao.y = 422;
@@ -1016,12 +1179,15 @@ function resetarPersonagens() {
   joao.velY = 0;
   joao.invencivel = 80;
   joao.montado = false;
+  joao.montaria = null;
   joao.grande = false;
   joao.poderTempo = 0;
   joao.nuvem = false;
   joao.superSayajin = false;
   joao.energiaVoo = ENERGIA_MAXIMA_VOO_GOKU;
   joao.agachado = false;
+  joao.ataqueTempo = 0;
+  joao.ataqueCooldown = 0;
   joao.h = joao.alturaNormal;
 
 }
@@ -1185,6 +1351,34 @@ function desenharFundo(fase) {
     desenharLua(812, 66);
     desenharArvoresNoturnas();
   }
+
+  if (fase.tema === "auditorio") {
+    desenharProgramaAuditorio();
+  }
+}
+
+function desenharProgramaAuditorio() {
+  ctx.fillStyle = "#6a040f";
+  ctx.fillRect(0, 0, 130, 430);
+  ctx.fillRect(830, 0, 130, 430);
+  ctx.fillStyle = "#d00000";
+  for (let x = 18; x < 130; x += 34) ctx.fillRect(x, 0, 14, 430);
+  for (let x = 844; x < 960; x += 34) ctx.fillRect(x, 0, 14, 430);
+  ctx.fillStyle = "#ffd43b";
+  ctx.fillRect(210, 54, 540, 8);
+  ctx.fillRect(210, 154, 540, 8);
+  ctx.fillStyle = "rgba(255,255,255,0.16)";
+  for (let y = 185; y < 360; y += 44) {
+    for (let x = 150; x < 830; x += 54) {
+      ctx.fillRect(x, y, 28, 22);
+      ctx.fillStyle = (x + y) % 3 === 0 ? "#74c0fc" : "#ff8fab";
+      ctx.fillRect(x + 8, y - 12, 12, 12);
+      ctx.fillStyle = "rgba(255,255,255,0.16)";
+    }
+  }
+  ctx.fillStyle = "#f7f3de";
+  ctx.font = "bold 34px monospace";
+  ctx.fillText("PROGRAMA DE AUDITÓRIO", 272, 118);
 }
 
 function desenharSol(x, y) {
@@ -1390,38 +1584,108 @@ function desenharTachas(fase) {
   });
 }
 
+function desenharCampoMinado(fase) {
+  fase.plataformas.forEach(plataforma => {
+    for (let x = plataforma.x; x < plataforma.x + plataforma.w; x += 32) {
+      ctx.fillStyle = Math.floor((x - plataforma.x) / 32) % 2 === 0 ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)";
+      ctx.fillRect(x, plataforma.y, Math.min(32, plataforma.x + plataforma.w - x), 10);
+      ctx.strokeStyle = "rgba(255,255,255,0.16)";
+      ctx.strokeRect(x, plataforma.y, Math.min(32, plataforma.x + plataforma.w - x), 10);
+    }
+  });
+
+  (fase.armadilhas || []).forEach(armadilha => {
+    if (!armadilha.revelada) return;
+    if (armadilha.tipo === "ratoeira" || armadilha.tipo === "armadilhaAco") {
+      ctx.fillStyle = "#495057";
+      ctx.fillRect(armadilha.x, armadilha.y + 5, armadilha.w, 5);
+      ctx.fillStyle = "#e9ecef";
+      for (let dente = 0; dente < 5; dente++) {
+        ctx.beginPath();
+        ctx.moveTo(armadilha.x + dente * 6, armadilha.y + 5);
+        ctx.lineTo(armadilha.x + 3 + dente * 6, armadilha.y - 4);
+        ctx.lineTo(armadilha.x + 6 + dente * 6, armadilha.y + 5);
+        ctx.fill();
+      }
+      ctx.fillStyle = "#ef476f";
+      ctx.fillRect(armadilha.x + 10, armadilha.y + 5, 8, 5);
+      return;
+    }
+    ctx.fillStyle = armadilha.cor;
+    ctx.fillRect(armadilha.x, armadilha.y, armadilha.w, armadilha.h);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 10px monospace";
+    ctx.fillText("!", armadilha.x + 11, armadilha.y + 9);
+  });
+}
+
+function desenharDestrutiveis(fase) {
+  (fase.destrutiveis || []).forEach(objeto => {
+    if (objeto.quebrado) return;
+    if (objeto.tipo === "barrilQuebravel") {
+      ctx.fillStyle = "#5c2f12";
+      ctx.fillRect(objeto.x, objeto.y, objeto.w, objeto.h);
+      ctx.fillStyle = "#9c551f";
+      ctx.fillRect(objeto.x + 5, objeto.y + 3, objeto.w - 10, objeto.h - 6);
+      ctx.fillStyle = "#20252c";
+      ctx.fillRect(objeto.x, objeto.y + 7, objeto.w, 5);
+      ctx.fillRect(objeto.x, objeto.y + objeto.h - 12, objeto.w, 5);
+    } else {
+      ctx.fillStyle = "#d90429";
+      ctx.fillRect(objeto.x, objeto.y + 14, objeto.w, 22);
+      ctx.fillRect(objeto.x + 17, objeto.y + 3, 45, 18);
+      ctx.fillStyle = "#74c0fc";
+      ctx.fillRect(objeto.x + 23, objeto.y + 7, 16, 11);
+      ctx.fillRect(objeto.x + 43, objeto.y + 7, 14, 11);
+      ctx.fillStyle = "#111111";
+      ctx.fillRect(objeto.x + 9, objeto.y + 32, 16, 10);
+      ctx.fillRect(objeto.x + 57, objeto.y + 32, 16, 10);
+      ctx.fillStyle = "#ffd43b";
+      ctx.fillRect(objeto.x + 2, objeto.y + 20, 8, 7);
+    }
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    ctx.fillRect(objeto.x, objeto.y - 8, objeto.w, 5);
+    ctx.fillStyle = "#51d88a";
+    ctx.fillRect(objeto.x, objeto.y - 8, objeto.w * (objeto.vida / objeto.vidaMax), 5);
+  });
+}
+
 function desenharBoneco(p) {
   const passo = p.andando && p.noChao ? Math.floor(frame / 7) % 2 : 0;
   const piscando = p.invencivel > 0 && Math.floor(frame / 5) % 2 === 0;
   if (piscando) return;
+  const deslocamentoMontaria = p.montado ? -18 : 0;
+  if (personagemAtual === "cr7" && buffonTempo > 0) desenharBuffonGuardiao(p);
+  if (p.montado) desenharMontariaDoJogador(p);
+  if (p.ataqueTempo > 0) desenharEfeitoGolpe(p, deslocamentoMontaria);
 
   if (p.avatar === "yoshi") {
     ctx.save();
-    ctx.translate(p.x + p.w / 2, p.y + p.h);
-    ctx.scale(ESCALA_VISUAL_PLAYER, ESCALA_VISUAL_PLAYER);
-    desenharSpriteYoshi(-31, -54, p.direcao, true);
+    ctx.translate(p.x + p.w / 2, p.y + p.h + deslocamentoMontaria);
+    ctx.scale(p.direcao * ESCALA_VISUAL_PLAYER, ESCALA_VISUAL_PLAYER);
+    desenharSpriteYoshi(-31, -54, 1, true);
     ctx.restore();
-    desenharEtiqueta(p.nome, p.x + p.w / 2, p.y - 10);
+    desenharEtiqueta(nomeJogadorMontado(p), p.x + p.w / 2, p.y + deslocamentoMontaria - 10);
     return;
   }
 
   if (p.avatar === "lobo") {
     ctx.save();
-    ctx.translate(p.x + p.w / 2, p.y + p.h);
+    ctx.translate(p.x + p.w / 2, p.y + p.h + deslocamentoMontaria);
     ctx.scale(ESCALA_VISUAL_PLAYER, ESCALA_VISUAL_PLAYER);
     desenharSpriteLobo({ x: -29, y: -40, w: 58, h: 38, direcao: p.direcao });
     ctx.restore();
-    desenharEtiqueta(p.nome, p.x + p.w / 2, p.y - 10);
+    desenharEtiqueta(nomeJogadorMontado(p), p.x + p.w / 2, p.y + deslocamentoMontaria - 10);
     return;
   }
 
   if (p.avatar === "miaw") {
     ctx.save();
-    ctx.translate(p.x + p.w / 2, p.y + p.h);
+    ctx.translate(p.x + p.w / 2, p.y + p.h + deslocamentoMontaria);
     ctx.scale(ESCALA_VISUAL_PLAYER, ESCALA_VISUAL_PLAYER);
     desenharMiawEletrico({ x: -24, y: -56, salvo: false, player: true }, p.direcao);
     ctx.restore();
-    desenharEtiqueta(p.nome, p.x + p.w / 2, p.y - 10);
+    desenharEtiqueta(nomeJogadorMontado(p), p.x + p.w / 2, p.y + deslocamentoMontaria - 10);
     return;
   }
 
@@ -1432,17 +1696,32 @@ function desenharBoneco(p) {
   }
 
   if (p.avatar === "goku") {
-    desenharGokuNuvemDourada(p);
-    desenharEtiqueta(p.nuvem ? "Super Goku na nuvem" : "Goku", p.x + p.w / 2, p.y - 10);
+    desenharGokuNuvemDourada(p.montado ? { ...p, y: p.y + deslocamentoMontaria } : p);
+    desenharEtiqueta(p.nuvem ? "Super Goku na nuvem" : nomeJogadorMontado(p), p.x + p.w / 2, p.y + deslocamentoMontaria - 10);
     return;
   }
 
   if (p.avatar === "meninoRoblox") {
     ctx.save();
-    ctx.translate(p.x + p.w / 2, p.y + p.h);
+    ctx.translate(p.x + p.w / 2, p.y + p.h + deslocamentoMontaria);
     ctx.scale(ESCALA_VISUAL_PLAYER, ESCALA_VISUAL_PLAYER);
     desenharMeninoRoblox({ x: -23, y: -58, w: 46, h: 58, direcao: p.direcao, morto: false });
     ctx.restore();
+    return;
+  }
+
+  if (p.avatar === "chaves") {
+    desenharChavesPixel({ ...p, y: p.y + deslocamentoMontaria, ataqueOffset: 0 });
+    return;
+  }
+
+  if (p.avatar === "esqueleto") {
+    desenharEsqueletoEspadachim({ ...p, y: p.y + deslocamentoMontaria, ataqueOffset: 0 });
+    return;
+  }
+
+  if (p.avatar === "silvioSantos") {
+    desenharSilvioSantos({ ...p, y: p.y + deslocamentoMontaria });
     return;
   }
 
@@ -1450,10 +1729,6 @@ function desenharBoneco(p) {
   const escala = (p.grande ? 1.18 : 1) * ESCALA_VISUAL_PLAYER;
   const offsetX = p.grande ? -3 : 0;
   const offsetY = p.grande ? -10 : 0;
-
-  if (p.montado) {
-    desenharYoshiMontaria(p);
-  }
 
   ctx.save();
 
@@ -1517,7 +1792,83 @@ function desenharBoneco(p) {
   ctx.fillRect(20, 55, 12, 4);
   ctx.restore();
 
-  desenharEtiqueta(p.montado ? p.nome + " + Yoshi" : p.nome, p.x + p.w / 2, baseY - 8);
+  desenharEtiqueta(nomeJogadorMontado(p), p.x + p.w / 2, baseY - 8);
+}
+
+function desenharEfeitoGolpe(p, deslocamentoMontaria) {
+  const frenteX = p.direcao > 0 ? p.x + p.w : p.x - 42;
+  const y = p.y + deslocamentoMontaria + 17;
+  ctx.fillStyle = "rgba(255,212,59,0.32)";
+  ctx.fillRect(frenteX, y - 8, 42, 34);
+  ctx.strokeStyle = "#ffd43b";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(frenteX + (p.direcao > 0 ? 0 : 42), y + 18);
+  ctx.lineTo(frenteX + (p.direcao > 0 ? 34 : 8), y);
+  ctx.stroke();
+}
+
+function desenharBuffonGuardiao(p) {
+  const x = Math.max(4, Math.min(canvas.width - 38, p.x - p.direcao * 52));
+  const y = p.y + 8;
+  ctx.fillStyle = "rgba(116,192,252,0.2)";
+  ctx.fillRect(x - 7, y - 7, 48, 62);
+  ctx.fillStyle = "#f1b48b";
+  ctx.fillRect(x + 8, y, 20, 17);
+  ctx.fillStyle = "#111111";
+  ctx.fillRect(x + 6, y - 4, 24, 7);
+  ctx.fillStyle = "#212529";
+  ctx.fillRect(x + 5, y + 18, 27, 27);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(x + 15, y + 21, 7, 18);
+  ctx.fillStyle = "#74c0fc";
+  ctx.fillRect(x - 3, y + 20, 9, 8);
+  ctx.fillRect(x + 31, y + 20, 9, 8);
+  ctx.fillStyle = "#111111";
+  ctx.fillRect(x + 7, y + 44, 9, 10);
+  ctx.fillRect(x + 23, y + 44, 9, 10);
+  desenharEtiqueta("BUFFON", x + 18, y - 10);
+}
+
+function nomeJogadorMontado(p) {
+  if (!p.montado) return p.nome;
+  return p.nome + (p.montaria === "mufasa" ? " + Mufasa" : " + Yoshi");
+}
+
+function desenharSilvioSantos(p) {
+  ctx.save();
+  ctx.translate(p.direcao < 0 ? p.x + p.w : p.x, p.y);
+  if (p.direcao < 0) ctx.scale(-1, 1);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
+  ctx.fillRect(0, 56, 38, 5);
+  ctx.fillStyle = "#f1b48b";
+  ctx.fillRect(7, 5, 24, 20);
+  ctx.fillStyle = "#d0d7de";
+  ctx.fillRect(5, 0, 27, 8);
+  ctx.fillRect(5, 7, 6, 8);
+  ctx.fillStyle = "#111111";
+  ctx.fillRect(12, 13, 4, 4);
+  ctx.fillRect(24, 13, 4, 4);
+  ctx.fillRect(15, 20, 11, 3);
+  ctx.fillStyle = "#1d3557";
+  ctx.fillRect(5, 26, 28, 27);
+  ctx.fillStyle = "#f7f3de";
+  ctx.fillRect(15, 27, 9, 22);
+  ctx.fillStyle = "#e63946";
+  ctx.fillRect(18, 29, 4, 18);
+  ctx.fillStyle = "#111827";
+  ctx.fillRect(7, 51, 10, 8);
+  ctx.fillRect(23, 51, 10, 8);
+  ctx.fillStyle = "#f1b48b";
+  ctx.fillRect(31, 29, 7, 15);
+  ctx.fillStyle = "#20252c";
+  ctx.fillRect(36, 25, 5, 22);
+  ctx.fillStyle = "#adb5bd";
+  ctx.fillRect(34, 21, 9, 8);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(37, 23, 3, 3);
+  ctx.restore();
+  desenharEtiqueta(nomeJogadorMontado(p), p.x + p.w / 2, p.y - 10);
 }
 
 function desenharNeymarMuletas(p) {
@@ -1526,7 +1877,6 @@ function desenharNeymarMuletas(p) {
   if (piscando) return;
 
   const baseY = p.montado ? p.y - 18 : p.y;
-  if (p.montado) desenharYoshiMontaria(p);
 
   ctx.save();
   if (p.direcao === -1) {
@@ -1676,10 +2026,55 @@ function desenharYoshi(yoshi) {
   desenharSpriteYoshi(x, y, 1, yoshi.salvo);
 }
 
+function desenharMufasa(mufasa, direcao = 1, montado = false) {
+  if (mufasa.montadoPor && !montado) return;
+  const bob = montado ? 0 : Math.sin(frame / 13) * 2;
+  let x = mufasa.x;
+  const y = mufasa.y + bob;
+
+  ctx.save();
+  if (direcao < 0) {
+    ctx.translate(x + 68, y);
+    ctx.scale(-1, 1);
+    x = 0;
+  }
+  ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
+  ctx.fillRect(x - 2, y + 50, 70, 6);
+  ctx.fillStyle = "#b5651d";
+  ctx.fillRect(x + 6, y + 22, 44, 28);
+  ctx.fillRect(x + 38, y + 11, 25, 25);
+  ctx.fillRect(x + 58, y + 20, 10, 8);
+  ctx.fillStyle = "#6f3b17";
+  ctx.fillRect(x + 32, y + 7, 28, 31);
+  ctx.fillRect(x + 43, y + 2, 8, 9);
+  ctx.fillRect(x + 55, y + 5, 8, 10);
+  ctx.fillStyle = "#d88a3d";
+  ctx.fillRect(x + 40, y + 13, 20, 18);
+  ctx.fillStyle = "#111111";
+  ctx.fillRect(x + 52, y + 18, 4, 4);
+  ctx.fillRect(x + 60, y + 25, 5, 3);
+  ctx.fillStyle = "#8b4513";
+  ctx.fillRect(x + 5, y + 47, 12, 8);
+  ctx.fillRect(x + 38, y + 47, 12, 8);
+  ctx.fillRect(x - 2, y + 24, 10, 7);
+  ctx.fillStyle = "#f7c948";
+  ctx.fillRect(x + 18, y + 18, 22, 7);
+  ctx.restore();
+  if (!montado) desenharEtiqueta("Mufasa", mufasa.x + 34, mufasa.y - 8);
+}
+
 function desenharYoshiMontaria(jogador) {
   const x = jogador.x - 12;
   const y = jogador.y + 22;
   desenharSpriteYoshi(x, y, jogador.direcao, true);
+}
+
+function desenharMontariaDoJogador(jogador) {
+  if (jogador.montaria === "mufasa") {
+    desenharMufasa({ x: jogador.x - 17, y: jogador.y + 19, w: 68, h: 56, montadoPor: jogador.nome }, jogador.direcao, true);
+    return;
+  }
+  desenharYoshiMontaria(jogador);
 }
 
 function desenharSpriteYoshi(x, y, direcao = 1, montado = false) {
@@ -1745,6 +2140,39 @@ function desenharMoeda(m) {
   ctx.fillRect(m.x - 2 + brilho, m.y - 8, 3, 16);
 }
 
+function desenharPremio50(premio) {
+  if (!premio.ativo || premio.coletado) return;
+  const bob = Math.sin(frame / 10) * 3;
+  ctx.fillStyle = "rgba(81,216,138,0.28)";
+  ctx.fillRect(premio.x - 5, premio.y + bob - 5, premio.w + 10, premio.h + 10);
+  ctx.fillStyle = "#51d88a";
+  ctx.fillRect(premio.x, premio.y + bob, premio.w, premio.h);
+  ctx.strokeStyle = "#f7f3de";
+  ctx.strokeRect(premio.x + 2, premio.y + bob + 2, premio.w - 4, premio.h - 4);
+  ctx.fillStyle = "#073b1d";
+  ctx.font = "bold 13px monospace";
+  ctx.fillText("R$ 50", premio.x + 4, premio.y + bob + 17);
+}
+
+function desenharDiamante(diamante) {
+  if (diamante.coletado) return;
+  const bob = Math.sin(frame / 9) * 3;
+  const x = diamante.x;
+  const y = diamante.y + bob;
+  ctx.fillStyle = "rgba(116,192,252,0.28)";
+  ctx.fillRect(x - 6, y - 6, diamante.w + 12, diamante.h + 12);
+  ctx.fillStyle = "#74c0fc";
+  ctx.beginPath();
+  ctx.moveTo(x + diamante.w / 2, y);
+  ctx.lineTo(x + diamante.w, y + 10);
+  ctx.lineTo(x + diamante.w / 2, y + diamante.h);
+  ctx.lineTo(x, y + 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(x + 10, y + 5, 5, 10);
+}
+
 function desenharCogumelo(c) {
   const bob = Math.sin(frame / 10) * 2;
   const x = c.x;
@@ -1778,6 +2206,16 @@ function desenharVilao(i) {
   if (i.tipo === "bossSupremo") {
     i.clones.forEach(clone => desenharBossSupremo(clone, true));
     desenharBossSupremo(i, false);
+    return;
+  }
+
+  if (i.tipo === "silvioBoss") {
+    desenharSilvioSantos(i);
+    const barraW = 72;
+    ctx.fillStyle = "rgba(0,0,0,0.72)";
+    ctx.fillRect(i.x - 10, i.y - 25, barraW, 10);
+    ctx.fillStyle = "#ffd43b";
+    ctx.fillRect(i.x - 8, i.y - 23, (barraW - 4) * (i.vida / i.vidaMax), 6);
     return;
   }
 
@@ -2378,6 +2816,9 @@ function desenharHUD(fase) {
   ctx.fillStyle = "#9fb3c8";
   ctx.font = "13px monospace";
   ctx.fillText("Fase " + (faseAtual + 1) + "/" + fases.length + "  |  Goku voa na nuvem e solta Genki Dama", 30, 92);
+  ctx.fillStyle = "#74c0fc";
+  ctx.font = "15px monospace";
+  ctx.fillText("Carteira: " + moedasLoja + " moedas | " + diamantes + " diamantes", 650, 40);
 
   if (chefeTimerAtivo && chefeTimer !== null) {
     const segundos = Math.max(0, Math.ceil(chefeTimer / 60));
@@ -2417,9 +2858,12 @@ function desenharFase() {
   desenharFundo(fase);
 
   fase.plataformas.forEach(desenharPlataforma);
+  desenharCampoMinado(fase);
+  desenharDestrutiveis(fase);
   desenharTachas(fase);
   desenharPortal(fase.portal);
   if (fase.trofeu) desenharTrofeu(fase.trofeu);
+  if (fase.mufasa) desenharMufasa(fase.mufasa);
   if (fase.cr7) desenharCR7Aliado(fase.cr7);
   if (fase.miaw) desenharMiawEletrico(fase.miaw);
   desenharNuvemGokuSolta(fase);
@@ -2428,6 +2872,8 @@ function desenharFase() {
   fase.moedas.forEach(m => {
     if (!m.coletada) desenharMoeda(m);
   });
+  (fase.premiosDiamante || []).forEach(desenharDiamante);
+  if (fase.premio50) desenharPremio50(fase.premio50);
 
   fase.cogumelos.forEach(c => {
     if (!c.coletado) desenharCogumelo(c);
@@ -2460,6 +2906,12 @@ function atualizarInimigos() {
       return;
     }
 
+    if (i.tipo === "silvioBoss") {
+      atualizarPoderSilvioBoss(i);
+      tratarColisaoVilao(joao, i);
+      return;
+    }
+
     const ajusteVilao = i.tipo === "messi" ? AJUSTE_MESSI_JOGAVEL : i.tipo === "meninoRoblox" ? 1.35 : 1;
     i.x += i.vel * multiplicador * AJUSTE_VELOCIDADE_JOGAVEL * ajusteVilao;
 
@@ -2474,16 +2926,45 @@ function atualizarInimigos() {
   });
 }
 
+function atualizarPoderSilvioBoss(silvio) {
+  silvio.x += silvio.vel * dificuldadeFinal() * AJUSTE_VELOCIDADE_JOGAVEL;
+  if (silvio.x <= silvio.min || silvio.x >= silvio.max) silvio.vel *= -1;
+  silvio.direcao = joao.x + joao.w / 2 >= silvio.x + silvio.w / 2 ? 1 : -1;
+  if (silvio.cooldownPoder > 0) silvio.cooldownPoder--;
+  if (silvio.cooldownPoder > 0) return;
+
+  const microfone = silvio.proximoPoder === "microfoneSilvio";
+  poderes.push({
+    dono: "vilao",
+    tipo: microfone ? "microfoneSilvio" : "jequiti",
+    nome: microfone ? "microfone do Silvio Santos" : "Jequiti do Silvio Santos",
+    x: silvio.x + silvio.w / 2 + silvio.direcao * 18,
+    y: silvio.y + 25,
+    w: microfone ? 30 : 18,
+    h: microfone ? 12 : 28,
+    vx: silvio.direcao * (microfone ? 7 : 5.6),
+    vy: 0,
+    cor: microfone ? "#adb5bd" : "#ff8fab",
+    vida: 130
+  });
+  silvio.proximoPoder = microfone ? "jequiti" : "microfoneSilvio";
+  silvio.cooldownPoder = 90;
+  mostrarAviso(microfone ? "Silvio lançou o microfone!" : "Silvio lançou Jequiti!");
+  tocarSom("gol");
+}
+
 function atualizarAtaquesChaves(chaves) {
   chaves.x += chaves.vel * dificuldadeFinal() * AJUSTE_VELOCIDADE_JOGAVEL;
   if (chaves.x <= chaves.min || chaves.x >= chaves.max) chaves.vel *= -1;
   chaves.direcao = joao.x + joao.w / 2 >= chaves.x + chaves.w / 2 ? 1 : -1;
 
-  const cicloAtaque = Math.floor(frame / 180);
-  if (frame % 180 === 0 && chaves.ultimoAtaqueChaves !== cicloAtaque) {
-    chaves.ultimoAtaqueChaves = cicloAtaque;
+  if (chaves.cooldownAtaqueChaves > 0) chaves.cooldownAtaqueChaves--;
+  if (chaves.cooldownSucoChaves > 0) chaves.cooldownSucoChaves--;
+
+  if (chaves.cooldownAtaqueChaves <= 0) {
     const soltaBarril = chaves.ataqueChaves % 2 === 1;
     chaves.ataqueChaves++;
+    chaves.cooldownAtaqueChaves = 180;
     poderes.push({
       dono: "vilao",
       tipo: soltaBarril ? "barrilChaves" : "sanduichePresunto",
@@ -2501,19 +2982,18 @@ function atualizarAtaquesChaves(chaves) {
     tocarSom(soltaBarril ? "pisao" : "gol");
   }
 
-  const cicloSuco = Math.floor((frame + 90) / 180);
-  if ((frame + 90) % 180 === 0 && chaves.ultimoSucoChaves !== cicloSuco) {
-    chaves.ultimoSucoChaves = cicloSuco;
+  if (chaves.cooldownSucoChaves <= 0) {
+    chaves.cooldownSucoChaves = 180;
     poderes.push({
       dono: "vilao",
       tipo: "sucoTamarindo",
       nome: "vômito de suco de tamarindo",
       x: chaves.x + chaves.w / 2 + chaves.direcao * 18,
-      y: chaves.y + 28,
+      y: chaves.y + chaves.h - 14,
       w: 40,
       h: 13,
       vx: chaves.direcao * 5.3,
-      vy: 1.5,
+      vy: 0,
       cor: "#9c6644",
       vida: 105
     });
@@ -2738,34 +3218,207 @@ function atualizarPoderRoblox() {
   }
 }
 
-function dispararBicicletaCR7() {
+function dispararPoderCR7() {
   if (personagemAtual !== "cr7" || poderCR7Cooldown > 0 || gameOver || venceu) return;
 
+  const jogaBuffon = proximoPoderCR7 === "buffonCR7";
   poderCR7Cooldown = 46;
   joao.grande = true;
   joao.poderTempo = Math.max(joao.poderTempo, 110);
+  buffonTempo = 180;
   poderes.push({
     dono: "cr7",
-    tipo: "bicicletaCR7",
-    nome: "Bicicleta do CR7",
+    tipo: jogaBuffon ? "buffonCR7" : "bicicletaCR7",
+    nome: jogaBuffon ? "Buffon do CR7" : "Bicicletinha do CR7",
     x: joao.x + joao.w / 2 + joao.direcao * 20,
-    y: joao.y + 16,
-    w: 44,
-    h: 30,
-    vx: joao.direcao * 9.2,
+    y: joao.y + (jogaBuffon ? 5 : 16),
+    w: jogaBuffon ? 30 : 44,
+    h: jogaBuffon ? 48 : 30,
+    vx: joao.direcao * (jogaBuffon ? 7.6 : 9.2),
     vy: -0.18,
-    cor: "#f7f3de",
-    vida: 105
+    cor: jogaBuffon ? "#74c0fc" : "#f7f3de",
+    vida: 105,
+    dano: 2
   });
-  mostrarAviso("CR7: SIUUUU! Bicicleta lançada!");
+  proximoPoderCR7 = jogaBuffon ? "bicicletaCR7" : "buffonCR7";
+  mostrarAviso(jogaBuffon ? "CR7 lançou um BUFFON!" : "CR7: SIUUUU! Bicicletinha lançada!");
   criarParticulas(joao.x + joao.w / 2, joao.y + 16, "#ffd43b", 26);
   tocarSom("gol");
 }
 
 function atualizarPoderCR7() {
+  if (buffonTempo > 0) buffonTempo--;
   if (poderCR7Cooldown > 0) poderCR7Cooldown--;
   if (personagemAtual === "cr7" && jogoIniciado && !pausado && !gameOver && frame % 50 === 0) {
-    dispararBicicletaCR7();
+    dispararPoderCR7();
+  }
+}
+
+function dispararPoderChaves(tipo) {
+  const barril = tipo === "barrilChaves";
+  poderes.push({
+    dono: "chavesPlayer",
+    tipo,
+    nome: barril ? "Barril do Chaves" : "Sanduíche de presunto",
+    x: joao.x + joao.w / 2 + joao.direcao * 18,
+    y: barril ? joao.y + 20 : joao.y + 26,
+    w: barril ? 34 : 30,
+    h: barril ? 36 : 16,
+    vx: joao.direcao * (barril ? 5.4 : 7.4),
+    vy: 0,
+    cor: barril ? "#8b4513" : "#f4a261",
+    vida: 120,
+    dano: barril ? 2 : 1
+  });
+  mostrarAviso(barril ? "Chaves soltou o barril!" : "Chaves lançou sanduíche de presunto!");
+  tocarSom(barril ? "pisao" : "gol");
+}
+
+function vomitarSucoChaves() {
+  poderes.push({
+    dono: "chavesPlayer",
+    tipo: "sucoTamarindo",
+    nome: "Suco de tamarindo",
+    x: joao.x + joao.w / 2 + joao.direcao * 18,
+    y: joao.y + joao.h - 15,
+    w: 40,
+    h: 13,
+    vx: joao.direcao * 5.8,
+    vy: 0,
+    cor: "#9c6644",
+    vida: 95,
+    dano: 1
+  });
+  mostrarAviso("Chaves vomitou suco de tamarindo!");
+  tocarSom("dano");
+}
+
+function atualizarPoderChaves() {
+  if (personagemAtual !== "chaves" || !jogoIniciado || pausado || gameOver || venceu) return;
+  if (poderChavesCooldown > 0) poderChavesCooldown--;
+  if (poderChavesSucoCooldown > 0) poderChavesSucoCooldown--;
+
+  if (poderChavesCooldown <= 0) {
+    dispararPoderChaves(proximoPoderChaves);
+    proximoPoderChaves = proximoPoderChaves === "sanduichePresunto" ? "barrilChaves" : "sanduichePresunto";
+    poderChavesCooldown = 180;
+  }
+  if (poderChavesSucoCooldown <= 0) {
+    vomitarSucoChaves();
+    poderChavesSucoCooldown = 180;
+  }
+}
+
+function dispararCorteEsqueleto(numero) {
+  poderes.push({
+    dono: "esqueletoPlayer",
+    tipo: "corteEsqueleto",
+    nome: "Espadada " + numero + " do Esqueleto",
+    x: joao.direcao > 0 ? joao.x + joao.w - 2 : joao.x - 54,
+    y: joao.y + 10,
+    w: 56,
+    h: 40,
+    vx: joao.direcao * 2.4,
+    vy: 0,
+    cor: "#e9ecef",
+    vida: 12,
+    dano: 1
+  });
+  mostrarAviso("Esqueleto: espadada " + numero + " de 2!");
+  tocarSom("pisao");
+}
+
+function atualizarPoderEsqueleto() {
+  if (personagemAtual !== "esqueleto" || !jogoIniciado || pausado || gameOver || venceu) return;
+  if (poderEsqueletoCooldown > 0) poderEsqueletoCooldown--;
+  if (segundoCorteEsqueleto > 0) {
+    segundoCorteEsqueleto--;
+    if (segundoCorteEsqueleto === 0) dispararCorteEsqueleto(2);
+  }
+  if (poderEsqueletoCooldown <= 0) {
+    dispararCorteEsqueleto(1);
+    segundoCorteEsqueleto = 22;
+    poderEsqueletoCooldown = 120;
+  }
+}
+
+function dispararPoderSilvio() {
+  const microfone = proximoPoderSilvio === "microfoneSilvio";
+  poderes.push({
+    dono: "silvioPlayer",
+    tipo: microfone ? "microfoneSilvio" : "jequiti",
+    nome: microfone ? "Microfone do Silvio" : "Jequiti",
+    x: joao.x + joao.w / 2 + joao.direcao * 18,
+    y: joao.y + (microfone ? 24 : 16),
+    w: microfone ? 30 : 18,
+    h: microfone ? 12 : 28,
+    vx: joao.direcao * (microfone ? 8 : 6.4),
+    vy: 0,
+    cor: microfone ? "#adb5bd" : "#ff8fab",
+    vida: 110,
+    dano: microfone ? 2 : 1
+  });
+  proximoPoderSilvio = microfone ? "jequiti" : "microfoneSilvio";
+  poderSilvioCooldown = 54;
+  mostrarAviso(microfone ? "Silvio lançou o microfone!" : "Silvio lançou Jequiti!");
+  tocarSom("gol");
+}
+
+function atualizarPoderSilvio() {
+  if (poderSilvioCooldown > 0) poderSilvioCooldown--;
+  if (personagemAtual === "silvioSantos" && jogoIniciado && !pausado && !gameOver && poderSilvioCooldown <= 0) {
+    dispararPoderSilvio();
+  }
+}
+
+function atualizarGolpeJogador() {
+  if (joao.ataqueCooldown > 0) joao.ataqueCooldown--;
+  if (joao.ataqueTempo > 0) joao.ataqueTempo--;
+  if (!jogoIniciado || pausado || gameOver || venceu || joao.ataqueCooldown > 0 || !teclaAtiva(["x", "X"])) return;
+
+  joao.ataqueTempo = 12;
+  joao.ataqueCooldown = 22;
+  const alcance = {
+    x: joao.direcao > 0 ? joao.x + joao.w - 2 : joao.x - 54,
+    y: joao.y + 8,
+    w: 56,
+    h: 46
+  };
+  const fase = fases[faseAtual];
+  const inimigo = fase.inimigos.find(alvo => !alvo.morto && colisao(alcance, alvo));
+
+  if (inimigo) {
+    if (ehChefeVilao(inimigo)) {
+      if (inimigo.invencivel <= 0) {
+        inimigo.vida--;
+        inimigo.invencivel = 24;
+        if (inimigo.vida <= 0) inimigo.morto = true;
+      }
+    } else {
+      inimigo.morto = true;
+    }
+    criarParticulas(inimigo.x + inimigo.w / 2, inimigo.y + inimigo.h / 2, "#ffd43b", 26);
+    mostrarAviso(inimigo.morto ? (inimigo.nome || "Vilão") + " foi nocauteado!" : "Golpe acertou! Vida: " + inimigo.vida + "/" + inimigo.vidaMax);
+    tocarSom(inimigo.morto ? "vitoria" : "pisao");
+    tremor = 12;
+  }
+
+  const objeto = (fase.destrutiveis || []).find(item => !item.quebrado && colisao(alcance, item));
+  if (objeto) {
+    objeto.vida--;
+    criarParticulas(objeto.x + objeto.w / 2, objeto.y + objeto.h / 2, objeto.tipo === "carroQuebravel" ? "#d90429" : "#9c551f", 30);
+    tocarSom("pisao");
+    if (objeto.vida <= 0) {
+      objeto.quebrado = true;
+      const premioMoedas = objeto.tipo === "carroQuebravel" ? 10 : 3;
+      moedas += premioMoedas;
+      moedasLoja += premioMoedas;
+      if (objeto.tipo === "carroQuebravel") diamantes++;
+      salvarCarteira();
+      mostrarAviso(objeto.tipo === "carroQuebravel" ? "Carro destruído: +10 moedas e +1 diamante!" : "Barril quebrado: +3 moedas!");
+    } else {
+      mostrarAviso("Continue golpeando! Resistência: " + objeto.vida + "/" + objeto.vidaMax);
+    }
   }
 }
 
@@ -2776,6 +3429,22 @@ function atualizarPoderes() {
     poder.y += poder.vy;
     poder.vida--;
 
+    if (poder.dono === "vilao" && personagemAtual === "cr7" && buffonTempo > 0) {
+      const buffonBox = {
+        x: Math.max(4, Math.min(canvas.width - 38, joao.x - joao.direcao * 52)) - 7,
+        y: joao.y + 1,
+        w: 48,
+        h: 62
+      };
+      if (colisao(buffonBox, poder)) {
+        criarParticulas(poder.x, poder.y, "#74c0fc", 20);
+        mostrarAviso("BUFFON DEFENDEU!");
+        tocarSom("pisao");
+        poderes.splice(p, 1);
+        continue;
+      }
+    }
+
     if (poder.dono === "vilao" && joao.invencivel <= 0 && colisao(joao, poder)) {
       mostrarAviso((poder.nome || "Poder do vilao") + " acertou!");
       tocarSom("dano");
@@ -2785,10 +3454,10 @@ function atualizarPoderes() {
       return;
     }
 
-    if (poder.dono === "neymar" || poder.dono === "goku" || poder.dono === "robloxPlayer" || poder.dono === "cr7") {
+    if (poder.dono === "neymar" || poder.dono === "goku" || poder.dono === "robloxPlayer" || poder.dono === "cr7" || poder.dono === "chavesPlayer" || poder.dono === "esqueletoPlayer" || poder.dono === "silvioPlayer") {
       const alvo = fases[faseAtual].inimigos.find(i => !i.morto && colisao(i, poder));
       if (alvo) {
-        const dano = poder.dono === "goku" || poder.dono === "cr7" ? 2 : 1;
+        const dano = poder.dano || (poder.dono === "goku" || poder.dono === "cr7" ? 2 : 1);
         if (ehChefeVilao(alvo)) {
           alvo.vida -= dano;
           alvo.invencivel = 18;
@@ -2803,7 +3472,7 @@ function atualizarPoderes() {
           alvo.morto = true;
           mostrarAviso((poder.nome || "Poder") + " derrubou um vilao!");
         }
-        const corImpacto = poder.dono === "goku" ? "#74c0fc" : poder.dono === "robloxPlayer" ? "#e03131" : poder.dono === "cr7" ? "#ffd43b" : "#ffe066";
+        const corImpacto = poder.cor || (poder.dono === "goku" ? "#74c0fc" : poder.dono === "robloxPlayer" ? "#e03131" : poder.dono === "cr7" ? "#ffd43b" : "#ffe066");
         criarParticulas(poder.x, poder.y, corImpacto, 20);
         poderes.splice(p, 1);
         continue;
@@ -2824,6 +3493,47 @@ function atualizarPoderes() {
 
 function desenharPoderes() {
   poderes.forEach(poder => {
+    if (poder.tipo === "buffonCR7") {
+      ctx.fillStyle = "rgba(116,192,252,0.25)";
+      ctx.fillRect(poder.x - 4, poder.y - 4, poder.w + 8, poder.h + 8);
+      ctx.fillStyle = "#f1b48b";
+      ctx.fillRect(poder.x + 7, poder.y, 16, 13);
+      ctx.fillStyle = "#111111";
+      ctx.fillRect(poder.x + 5, poder.y - 3, 20, 5);
+      ctx.fillStyle = "#212529";
+      ctx.fillRect(poder.x + 5, poder.y + 14, 20, 23);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(poder.x + 12, poder.y + 17, 6, 15);
+      ctx.fillStyle = "#74c0fc";
+      ctx.fillRect(poder.x, poder.y + 17, 6, 8);
+      ctx.fillRect(poder.x + 24, poder.y + 17, 6, 8);
+      ctx.fillStyle = "#111111";
+      ctx.fillRect(poder.x + 6, poder.y + 36, 7, 11);
+      ctx.fillRect(poder.x + 18, poder.y + 36, 7, 11);
+      return;
+    }
+
+    if (poder.tipo === "corteEsqueleto") {
+      ctx.save();
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      const esquerda = poder.vx < 0;
+      ctx.arc(
+        poder.x + poder.w / 2,
+        poder.y + poder.h / 2,
+        24,
+        esquerda ? Math.PI * 0.55 : -Math.PI * 0.45,
+        esquerda ? Math.PI * 1.45 : Math.PI * 0.45
+      );
+      ctx.stroke();
+      ctx.strokeStyle = "#adb5bd";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(poder.x, poder.y, poder.w, poder.h);
+      ctx.restore();
+      return;
+    }
+
     if (poder.tipo === "sanduichePresunto") {
       ctx.fillStyle = "#e9c46a";
       ctx.fillRect(poder.x, poder.y, poder.w, poder.h);
@@ -2856,6 +3566,30 @@ function desenharPoderes() {
       ctx.fillRect(poder.x, poder.y, poder.w, poder.h);
       ctx.fillStyle = "#d4a373";
       ctx.fillRect(poder.x + 5, poder.y + 2, poder.w - 12, 3);
+      return;
+    }
+
+    if (poder.tipo === "jequiti") {
+      ctx.fillStyle = "rgba(255,135,135,0.25)";
+      ctx.fillRect(poder.x - 4, poder.y - 4, poder.w + 8, poder.h + 8);
+      ctx.fillStyle = "#ff8fab";
+      ctx.fillRect(poder.x + 2, poder.y + 7, poder.w - 4, poder.h - 7);
+      ctx.fillStyle = "#ffd6e0";
+      ctx.fillRect(poder.x + 5, poder.y + 10, poder.w - 10, 8);
+      ctx.fillStyle = "#f7c948";
+      ctx.fillRect(poder.x + 6, poder.y, poder.w - 12, 8);
+      return;
+    }
+
+    if (poder.tipo === "microfoneSilvio") {
+      ctx.save();
+      ctx.translate(poder.x + poder.w / 2, poder.y + poder.h / 2);
+      ctx.rotate(frame * 0.18);
+      ctx.fillStyle = "#adb5bd";
+      ctx.fillRect(-15, -5, 12, 10);
+      ctx.fillStyle = "#20252c";
+      ctx.fillRect(-3, -2, 20, 5);
+      ctx.restore();
       return;
     }
 
@@ -3073,12 +3807,43 @@ function coletarMoedas() {
     if (!m.coletada && colisao(joao, moedaBox)) {
       m.coletada = true;
       moedas++;
+      moedasLoja++;
+      salvarCarteira();
       tocarSom("moeda");
       criarParticulas(m.x, m.y, "#ffd43b", 12);
       if (personagemAtual === "neymar") {
         mostrarAviso("PARABÉNS, VC TRAIU MAIS UMA ESPOSA");
       }
     }
+  });
+}
+
+function atualizarPremioSilvio() {
+  const fase = fases[faseAtual];
+  if (!fase.premio50) return;
+  const silvio = fase.inimigos.find(inimigo => inimigo.tipo === "silvioBoss");
+  if (silvio?.morto) fase.premio50.ativo = true;
+  if (!fase.premio50.ativo || fase.premio50.coletado || !colisao(joao, fase.premio50)) return;
+
+  fase.premio50.coletado = true;
+  moedas += 50;
+  moedasLoja += 50;
+  salvarCarteira();
+  tocarSom("moeda");
+  criarParticulas(fase.premio50.x + 24, fase.premio50.y + 12, "#51d88a", 50);
+  mostrarAviso("Silvio soltou R$ 50! Prêmio guardado na carteira.");
+}
+
+function coletarDiamantes() {
+  const fase = fases[faseAtual];
+  (fase.premiosDiamante || []).forEach(diamante => {
+    if (diamante.coletado || !colisao(joao, diamante)) return;
+    diamante.coletado = true;
+    diamantes++;
+    salvarCarteira();
+    tocarSom("moeda");
+    criarParticulas(diamante.x + 12, diamante.y + 14, "#74c0fc", 30);
+    mostrarAviso("Diamante conquistado! Guarde para a futura loja.");
   });
 }
 
@@ -3107,20 +3872,39 @@ function salvarYoshi() {
   const candidatos = [joao];
 
   candidatos.forEach(p => {
-    if (fase.yoshi.salvo || !colisao(p, yoshiBox)) return;
+    if (!colisao(p, yoshiBox)) return;
 
     const podeMontar = p.avatar === "humano" || p.avatar === "neymar";
     if (podeMontar && !fase.yoshi.montadoPor && !p.montado) {
       p.montado = true;
+      p.montaria = "yoshi";
       fase.yoshi.montadoPor = p.nome;
     }
 
-    fase.yoshi.salvo = true;
-    yoshis++;
+    if (!fase.yoshi.salvo) {
+      fase.yoshi.salvo = true;
+      yoshis++;
+    }
     tocarSom("yoshi");
     criarParticulas(fase.yoshi.x + 30, fase.yoshi.y + 28, "#51d88a", 24);
     mostrarAviso(podeMontar ? p.nome + " montou no Yoshi!" : p.nome + " resgatou o Yoshi!");
   });
+}
+
+function montarMufasa() {
+  const fase = fases[faseAtual];
+  if (!fase.mufasa || joao.montado || joao.nuvem) return;
+  const box = { x: fase.mufasa.x - 4, y: fase.mufasa.y, w: fase.mufasa.w + 8, h: fase.mufasa.h };
+  if (!colisao(joao, box)) return;
+
+  fase.mufasa.salvo = true;
+  fase.mufasa.montadoPor = joao.nome;
+  joao.montado = true;
+  joao.montaria = "mufasa";
+  joao.invencivel = Math.max(joao.invencivel, 90);
+  tocarSom("yoshi");
+  criarParticulas(fase.mufasa.x + 34, fase.mufasa.y + 28, "#d88a3d", 34);
+  mostrarAviso(joao.nome + " subiu no Mufasa!");
 }
 
 function coletarAliadosEspeciais() {
@@ -3152,7 +3936,7 @@ function coletarAliadosEspeciais() {
 
 function montarNuvemGoku() {
   const fase = fases[faseAtual];
-  if (joao.avatar !== "goku" || joao.nuvem) return;
+  if (joao.avatar !== "goku" || joao.nuvem || joao.montado) return;
 
   const nuvem = nuvemGokuDaFase(fase);
   const box = { x: nuvem.x, y: nuvem.y, w: nuvem.w, h: nuvem.h };
@@ -3192,6 +3976,51 @@ function tocarTachas(jogador) {
   tocarSom("dano");
   tremor = 26;
   criarParticulas(jogador.x + jogador.w / 2, jogador.y + jogador.h, "#d0d7de", 30);
+  resetarPersonagens();
+}
+
+function tocarArmadilhasOcultas(jogador) {
+  const fase = fases[faseAtual];
+  const armadilha = (fase.armadilhas || []).find(item => !item.ativada && colisao(jogador, item));
+  if (!armadilha) return;
+
+  armadilha.ativada = true;
+  armadilha.revelada = true;
+  criarParticulas(armadilha.x + armadilha.w / 2, armadilha.y, armadilha.cor, 32);
+  tremor = 18;
+  tocarSom(armadilha.tipo === "mola" ? "pulo" : "dano");
+  mostrarAviso("ARMADILHA: " + armadilha.nome + "!");
+
+  if (armadilha.tipo === "mola") {
+    jogador.velY = -18;
+    jogador.noChao = false;
+    return;
+  }
+  if (armadilha.tipo === "gelo") {
+    jogador.x = Math.max(0, Math.min(canvas.width - jogador.w, jogador.x + jogador.direcao * 110));
+    jogador.invencivel = Math.max(jogador.invencivel, 30);
+    return;
+  }
+  if (armadilha.tipo === "areia") {
+    jogador.velX = 0;
+    jogador.velY = 4;
+    jogador.invencivel = Math.max(jogador.invencivel, 35);
+    return;
+  }
+  if (armadilha.tipo === "portalFalso") {
+    jogador.x = 52;
+    jogador.y = 422;
+    jogador.velX = 0;
+    jogador.velY = 0;
+    return;
+  }
+  if (armadilha.tipo === "fantasma") {
+    jogador.direcao *= -1;
+    jogador.x = Math.max(0, Math.min(canvas.width - jogador.w, jogador.x - jogador.direcao * 90));
+    jogador.invencivel = Math.max(jogador.invencivel, 40);
+    return;
+  }
+
   resetarPersonagens();
 }
 
@@ -3299,7 +4128,7 @@ function telaPausa() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   desenharPainelCentral("PAUSADO", [
     "Pressione P para voltar ao jogo",
-    "Os dois jogadores precisam entrar no portal"
+    "Derrote os chefões e entre no portal"
   ], "#51d88a");
 }
 
@@ -3342,6 +4171,21 @@ function reiniciarJogo() {
     fase.cogumelos.forEach(c => {
       c.coletado = false;
     });
+    (fase.armadilhas || []).forEach(armadilha => {
+      armadilha.revelada = false;
+      armadilha.ativada = false;
+    });
+    (fase.destrutiveis || []).forEach(objeto => {
+      objeto.vida = objeto.vidaMax;
+      objeto.quebrado = false;
+    });
+    (fase.premiosDiamante || []).forEach(diamante => {
+      diamante.coletado = false;
+    });
+    if (fase.premio50) {
+      fase.premio50.ativo = false;
+      fase.premio50.coletado = false;
+    }
     if (fase.cr7) fase.cr7.salvo = false;
     if (fase.miaw) fase.miaw.salvo = false;
     fase.inimigos.forEach(i => {
@@ -3356,12 +4200,20 @@ function reiniciarJogo() {
       }
       if (i.tipo === "chaves") {
         i.ataqueChaves = 0;
-        i.ultimoAtaqueChaves = -1;
-        i.ultimoSucoChaves = -1;
+        i.cooldownAtaqueChaves = 0;
+        i.cooldownSucoChaves = 90;
+      }
+      if (i.tipo === "silvioBoss") {
+        i.cooldownPoder = 45;
+        i.proximoPoder = "jequiti";
       }
     });
     fase.yoshi.salvo = false;
     fase.yoshi.montadoPor = null;
+    if (fase.mufasa) {
+      fase.mufasa.salvo = false;
+      fase.mufasa.montadoPor = null;
+    }
   });
 
   resetarPersonagens();
@@ -3403,11 +4255,16 @@ function loop() {
 
   atualizarPlataformasMoveis();
   moverPersonagem(joao, ["a", "ArrowLeft"], ["d", "ArrowRight"], ["w", "ArrowUp"]);
+  atualizarGolpeJogador();
+  tocarArmadilhasOcultas(joao);
 
   atualizarPoderNeymar();
   atualizarPoderGoku();
   atualizarPoderRoblox();
   atualizarPoderCR7();
+  atualizarPoderChaves();
+  atualizarPoderEsqueleto();
+  atualizarPoderSilvio();
   atualizarInimigos();
   lancarPlacaInjusticaGlobal();
   atualizarPoderes();
@@ -3420,8 +4277,11 @@ function loop() {
   tocarLava(joao);
   tocarTachas(joao);
   coletarMoedas();
+  coletarDiamantes();
+  atualizarPremioSilvio();
   comerCogumelos();
   salvarYoshi();
+  montarMufasa();
   coletarAliadosEspeciais();
   montarNuvemGoku();
   verificarPortal();

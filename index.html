@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reino Pixel Extremo</title>
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
   <main class="app">
@@ -15,7 +15,7 @@
       </div>
 
       <div class="controls" aria-label="Controles">
-        <span><strong>Teclado</strong> A/D/W/S ou setas</span>
+        <span><strong>Teclado</strong> A/D/W/S, setas e X para golpear</span>
         <span><strong>Celular</strong> escolha personagem e jogue</span>
         <span id="deviceMode" class="device-mode"><strong>Modo</strong> detectando...</span>
       </div>
@@ -44,6 +44,9 @@
         <button type="button" class="player-choice" data-character="neymar">Neymar</button>
         <button type="button" class="player-choice" data-character="goku">Goku</button>
         <button type="button" class="player-choice" data-character="meninoRoblox">Menino Roblox</button>
+        <button type="button" class="player-choice" data-character="chaves">Chaves</button>
+        <button type="button" class="player-choice" data-character="esqueleto">Esqueleto</button>
+        <button type="button" class="player-choice" data-character="silvioSantos">Silvio Santos</button>
       </div>
 
       <div class="touch-pad">
@@ -57,11 +60,12 @@
 
           <button type="button" class="touch-btn jump action-jump" data-action="jump" aria-label="Pular">PULAR</button>
           <button type="button" class="touch-btn crouch action-crouch" data-action="down" aria-label="Abaixar">ABAIXAR</button>
+          <button type="button" class="touch-btn attack action-attack" data-action="attack" aria-label="Golpear">GOLPE</button>
         </div>
       </div>
     </section>
   </main>
 
-  <script src="script.js?v=24"></script>
+  <script src="script.js?v=26"></script>
 </body>
 </html>

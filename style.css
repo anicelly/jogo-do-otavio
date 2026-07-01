@@ -225,7 +225,7 @@ body.device-desktop .touch-pad {
 
 .mobile-gamepad {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(96px, 0.62fr) minmax(96px, 0.62fr);
+  grid-template-columns: minmax(150px, 1fr) repeat(3, minmax(88px, 0.55fr));
   align-items: center;
   gap: 14px;
 }
@@ -270,8 +270,14 @@ body.device-desktop .touch-pad {
   color: #061124;
 }
 
+.touch-btn.attack {
+  background: linear-gradient(180deg, #ff8787, #d90429);
+  color: #ffffff;
+}
+
 .action-jump,
-.action-crouch {
+.action-crouch,
+.action-attack {
   min-height: 112px;
   border-radius: 50%;
   font-size: 1rem;
@@ -377,7 +383,8 @@ body.device-tablet .action-jump {
   }
 
   .action-jump,
-  .action-crouch {
+  .action-crouch,
+  .action-attack {
     min-height: 76px;
     border-radius: 10px;
   }
@@ -388,7 +395,8 @@ body.device-mobile .mobile-gamepad {
 }
 
 body.device-mobile .action-jump,
-body.device-mobile .action-crouch {
+body.device-mobile .action-crouch,
+body.device-mobile .action-attack {
   min-height: 76px;
   border-radius: 10px;
 }
