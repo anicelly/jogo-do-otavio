@@ -51,6 +51,7 @@ let poderNeymarCooldown = 0;
 let genkiDamaCooldown = 0;
 let poderRobloxCooldown = 0;
 let proximoPoderRoblox = "celular";
+let poderCR7Cooldown = 0;
 const botaoSom = document.getElementById("botaoSom");
 const activePlayerLabel = document.getElementById("activePlayerLabel");
 const deviceMode = document.getElementById("deviceMode");
@@ -332,7 +333,7 @@ const fases = [
     ]
   },
   {
-    nome: "Fase 6 - Castelo da Princesa",
+    nome: "Fase 6 - Supercopa",
     fundo: ["#2a1014", "#070407"],
     tema: "vulcao",
     plataformas: [
@@ -346,7 +347,6 @@ const fases = [
       { x: 704, y: 240, w: 136, h: 22, tipo: "castelo" }
     ],
     portal: { x: 850, y: 180, w: 58, h: 60 },
-    princesa: { x: 796, y: 180 },
     yoshi: { x: 308, y: 300, salvo: false },
     moedas: [
       { x: 132, y: 354, coletada: false },
@@ -574,6 +574,33 @@ const fases = [
   }
 ];
 
+const campeonatos = [
+  { nome: "Copa do Rei", cor: "#f7c948" },
+  { nome: "La Liga", cor: "#ff6b6b" },
+  { nome: "Champions League", cor: "#74c0fc" },
+  { nome: "Eurocopa", cor: "#51d88a" },
+  { nome: "Nations League", cor: "#c77dff" },
+  { nome: "Supercopa", cor: "#ffd166" },
+  { nome: "Libertadores", cor: "#d0d7de" },
+  { nome: "Mundial de Clubes", cor: "#4cc9f0" },
+  { nome: "Premier League", cor: "#b197fc" },
+  { nome: "Serie A", cor: "#4dabf7" },
+  { nome: "Sauditão", cor: "#69db7c" },
+  { nome: "Copa do Mundo", cor: "#ffd43b" }
+];
+
+fases.forEach((fase, indice) => {
+  const campeonato = campeonatos[indice];
+  fase.campeonato = campeonato;
+  fase.nome = "Fase " + (indice + 1) + " - " + campeonato.nome;
+  fase.trofeu = {
+    x: fase.portal.x + fase.portal.w / 2 - 18,
+    y: fase.portal.y - 54,
+    nome: campeonato.nome,
+    cor: campeonato.cor
+  };
+});
+
 // Reforcos nas cinco primeiras fases para elevar a dificuldade inicial.
 fases[0].inimigos.push(criarVilao("cavaleiro", 730, 436, 2.4, 680, 860));
 fases[1].inimigos.push(criarVilao("meninoRoblox", 502, 428, 2.1, 470, 690));
@@ -743,14 +770,11 @@ function atualizarTimerChefe() {
 
     chefeTimerAlvo = alvo;
     chefeTimerAtivo = true;
-    chefeTimer = 1200;
-    mostrarAviso("Derrote " + (alvo.nome || "o chefe") + " em 20 segundos!");
+    chefeTimer = 2700;
+    mostrarAviso("Derrote todos os chefões em 45 segundos!");
   }
 
-  if (!chefeTimerAlvo || chefeTimerAlvo.morto) {
-    resetarTimerChefe();
-    return;
-  }
+  chefeTimerAlvo = chefesVivos[0];
 
   chefeTimer--;
 
@@ -975,6 +999,7 @@ function resetarPersonagens() {
   genkiDamaCooldown = 0;
   poderRobloxCooldown = 0;
   proximoPoderRoblox = "celular";
+  poderCR7Cooldown = 0;
 
   joao.x = 52;
   joao.y = 422;
@@ -2186,41 +2211,27 @@ function desenharCellMontadoNaBesta(i) {
   desenharEtiqueta("Cell na Besta", i.x + i.w / 2, i.y - 30);
 }
 
-function desenharPrincesa(princesa) {
+function desenharTrofeu(trofeu) {
   const bob = Math.sin(frame / 16) * 2;
-  const x = princesa.x;
-  const y = princesa.y + bob;
+  const x = trofeu.x;
+  const y = trofeu.y + bob;
 
-  ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
-  ctx.fillRect(x - 2, y + 58, 48, 6);
-
-  ctx.fillStyle = "#f7c948";
-  ctx.fillRect(x + 10, y, 24, 8);
-  ctx.fillRect(x + 13, y - 6, 5, 8);
-  ctx.fillRect(x + 23, y - 10, 5, 12);
-  ctx.fillRect(x + 32, y - 6, 5, 8);
-
-  ctx.fillStyle = "#f1c27d";
-  ctx.fillRect(x + 12, y + 8, 22, 20);
-  ctx.fillStyle = "#ffd6a5";
-  ctx.fillRect(x + 16, y + 12, 14, 8);
-  ctx.fillStyle = "#7a3f13";
-  ctx.fillRect(x + 8, y + 6, 8, 24);
-  ctx.fillRect(x + 30, y + 6, 8, 24);
-
-  ctx.fillStyle = "#111111";
-  ctx.fillRect(x + 18, y + 17, 3, 3);
-  ctx.fillRect(x + 28, y + 17, 3, 3);
-  ctx.fillRect(x + 21, y + 24, 8, 2);
-
-  ctx.fillStyle = "#ff8fab";
-  ctx.fillRect(x + 8, y + 30, 30, 30);
-  ctx.fillStyle = "#ffc2d1";
-  ctx.fillRect(x + 14, y + 33, 18, 24);
-  ctx.fillStyle = "#f7c948";
-  ctx.fillRect(x + 20, y + 36, 6, 16);
-
-  desenharEtiqueta("Princesa", x + 23, y - 14);
+  ctx.fillStyle = "rgba(255, 212, 59, 0.2)";
+  ctx.fillRect(x - 8, y - 8, 52, 62);
+  ctx.fillStyle = trofeu.cor;
+  ctx.fillRect(x + 5, y, 26, 8);
+  ctx.fillRect(x + 8, y + 8, 20, 24);
+  ctx.fillRect(x + 13, y + 32, 10, 10);
+  ctx.fillRect(x + 5, y + 42, 26, 7);
+  ctx.strokeStyle = trofeu.cor;
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.arc(x + 5, y + 13, 10, Math.PI / 2, Math.PI * 1.5);
+  ctx.arc(x + 31, y + 13, 10, -Math.PI / 2, Math.PI / 2);
+  ctx.stroke();
+  ctx.fillStyle = "#fff3bf";
+  ctx.fillRect(x + 14, y + 5, 8, 18);
+  desenharEtiqueta(trofeu.nome, x + 18, y - 14);
 }
 
 function desenharPortal(portal) {
@@ -2273,7 +2284,7 @@ function desenharHUD(fase) {
     const segundos = Math.max(0, Math.ceil(chefeTimer / 60));
     ctx.fillStyle = segundos <= 2 ? "#ef476f" : "#ff6b00";
     ctx.font = "18px monospace";
-    ctx.fillText("CHEFE: " + segundos + "s", 590, 68);
+    ctx.fillText("CHEFÕES: " + segundos + "s", 570, 68);
   }
 
   if (joao.avatar === "goku" && joao.nuvem) {
@@ -2309,7 +2320,7 @@ function desenharFase() {
   fase.plataformas.forEach(desenharPlataforma);
   desenharTachas(fase);
   desenharPortal(fase.portal);
-  if (fase.princesa) desenharPrincesa(fase.princesa);
+  if (fase.trofeu) desenharTrofeu(fase.trofeu);
   if (fase.cr7) desenharCR7Aliado(fase.cr7);
   if (fase.miaw) desenharMiawEletrico(fase.miaw);
   desenharNuvemGokuSolta(fase);
@@ -2538,6 +2549,37 @@ function atualizarPoderRoblox() {
   }
 }
 
+function dispararBicicletaCR7() {
+  if (personagemAtual !== "cr7" || poderCR7Cooldown > 0 || gameOver || venceu) return;
+
+  poderCR7Cooldown = 46;
+  joao.grande = true;
+  joao.poderTempo = Math.max(joao.poderTempo, 110);
+  poderes.push({
+    dono: "cr7",
+    tipo: "bicicletaCR7",
+    nome: "Bicicleta do CR7",
+    x: joao.x + joao.w / 2 + joao.direcao * 20,
+    y: joao.y + 16,
+    w: 44,
+    h: 30,
+    vx: joao.direcao * 9.2,
+    vy: -0.18,
+    cor: "#f7f3de",
+    vida: 105
+  });
+  mostrarAviso("CR7: SIUUUU! Bicicleta lançada!");
+  criarParticulas(joao.x + joao.w / 2, joao.y + 16, "#ffd43b", 26);
+  tocarSom("gol");
+}
+
+function atualizarPoderCR7() {
+  if (poderCR7Cooldown > 0) poderCR7Cooldown--;
+  if (personagemAtual === "cr7" && jogoIniciado && !pausado && !gameOver && frame % 50 === 0) {
+    dispararBicicletaCR7();
+  }
+}
+
 function atualizarPoderes() {
   for (let p = poderes.length - 1; p >= 0; p--) {
     const poder = poderes[p];
@@ -2554,10 +2596,10 @@ function atualizarPoderes() {
       return;
     }
 
-    if (poder.dono === "neymar" || poder.dono === "goku" || poder.dono === "robloxPlayer") {
+    if (poder.dono === "neymar" || poder.dono === "goku" || poder.dono === "robloxPlayer" || poder.dono === "cr7") {
       const alvo = fases[faseAtual].inimigos.find(i => !i.morto && colisao(i, poder));
       if (alvo) {
-        const dano = poder.dono === "goku" ? 2 : 1;
+        const dano = poder.dono === "goku" || poder.dono === "cr7" ? 2 : 1;
         if (ehChefeVilao(alvo)) {
           alvo.vida -= dano;
           alvo.invencivel = 18;
@@ -2572,7 +2614,7 @@ function atualizarPoderes() {
           alvo.morto = true;
           mostrarAviso((poder.nome || "Poder") + " derrubou um vilao!");
         }
-        const corImpacto = poder.dono === "goku" ? "#74c0fc" : poder.dono === "robloxPlayer" ? "#e03131" : "#ffe066";
+        const corImpacto = poder.dono === "goku" ? "#74c0fc" : poder.dono === "robloxPlayer" ? "#e03131" : poder.dono === "cr7" ? "#ffd43b" : "#ffe066";
         criarParticulas(poder.x, poder.y, corImpacto, 20);
         poderes.splice(p, 1);
         continue;
@@ -2593,6 +2635,28 @@ function atualizarPoderes() {
 
 function desenharPoderes() {
   poderes.forEach(poder => {
+    if (poder.tipo === "bicicletaCR7") {
+      ctx.save();
+      ctx.translate(poder.x + poder.w / 2, poder.y + poder.h / 2);
+      ctx.rotate((frame * 0.22) * (poder.vx >= 0 ? 1 : -1));
+      ctx.strokeStyle = "#f7f3de";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(-14, 7, 9, 0, Math.PI * 2);
+      ctx.arc(14, 7, 9, 0, Math.PI * 2);
+      ctx.moveTo(-14, 7);
+      ctx.lineTo(-2, -7);
+      ctx.lineTo(7, 7);
+      ctx.lineTo(-14, 7);
+      ctx.moveTo(-2, -7);
+      ctx.lineTo(14, 7);
+      ctx.stroke();
+      ctx.fillStyle = "#ffd43b";
+      ctx.fillRect(-5, -11, 13, 4);
+      ctx.restore();
+      return;
+    }
+
     if (poder.tipo === "placaInjustica") {
       ctx.fillStyle = "rgba(0, 0, 0, 0.32)";
       ctx.fillRect(poder.x - 4, poder.y - 4, poder.w + 8, poder.h + 8);
@@ -2787,6 +2851,9 @@ function coletarMoedas() {
       moedas++;
       tocarSom("moeda");
       criarParticulas(m.x, m.y, "#ffd43b", 12);
+      if (personagemAtual === "neymar") {
+        mostrarAviso("PARABÉNS, VC TRAIU MAIS UMA ESPOSA");
+      }
     }
   });
 }
@@ -2911,16 +2978,18 @@ function verificarPortal() {
     const chefeVivo = fase.inimigos.some(i => ehChefeVilao(i) && !i.morto);
 
     if (chefeVivo) {
-      mostrarAviso("Derrote o rei antes de abrir o portal!");
+      mostrarAviso("Derrote todos os chefões para conquistar o troféu!");
       return;
     }
+
+    mostrarAviso("Troféu conquistado: " + fase.campeonato.nome + "!");
 
     faseAtual++;
 
     if (faseAtual >= fases.length) {
       venceu = true;
       tocarSom("vitoria");
-      mensagem.innerText = "Vitoria! " + joao.nome + " salvou o reino.";
+      mensagem.innerText = "Vitória! " + joao.nome + " conquistou a Copa do Mundo.";
     } else {
       mensagem.innerText = fases[faseAtual].nome;
       bannerFase = 160;
@@ -2938,7 +3007,7 @@ function telaVitoria() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   desenharTorres();
-  desenharYoshi({ x: 454, y: 318, salvo: false });
+  desenharTrofeu({ x: 462, y: 292, nome: "COPA DO MUNDO", cor: "#ffd43b" });
 
   ctx.fillStyle = "#f7c948";
   ctx.font = "48px monospace";
@@ -2946,7 +3015,7 @@ function telaVitoria() {
 
   ctx.fillStyle = "#f7f3de";
   ctx.font = "22px monospace";
-  ctx.fillText(joao.nome + " derrotou os viloes extremos.", 246, 234);
+  ctx.fillText(joao.nome + " é campeão do mundo!", 300, 234);
   ctx.fillText("Moedas coletadas: " + moedas, 326, 278);
   ctx.fillText("Yoshis resgatados: " + yoshis + "/" + fases.length, 332, 314);
   ctx.fillText("Clique em Reiniciar para jogar de novo.", 248, 392);
@@ -2956,9 +3025,9 @@ function telaGameOver() {
   desenharFundo(fases[faseAtual]);
   fases[faseAtual].plataformas.forEach(desenharPlataforma);
   desenharPainelCentral("GAME OVER", [
-    "O vilao nao foi derrotado em 20 segundos",
+    "Os chefões não foram derrotados em 45 segundos",
     "Pressione ENTER ou clique em Reiniciar",
-    "Neymar dispara poder pela muleta automaticamente"
+    "CR7 grita SIUUUU, cresce e lança bicicletas"
   ], "#ef476f");
 }
 
@@ -3109,6 +3178,7 @@ function loop() {
   atualizarPoderNeymar();
   atualizarPoderGoku();
   atualizarPoderRoblox();
+  atualizarPoderCR7();
   atualizarInimigos();
   lancarPlacaInjusticaGlobal();
   atualizarPoderes();
