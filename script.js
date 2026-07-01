@@ -59,6 +59,7 @@ let chefeTimer = null;
 let chefeTimerAtivo = false;
 let chefeTimerAlvo = null;
 let poderNeymarCooldown = 0;
+let proximoPoderNeymar = "muletaPower";
 let genkiDamaCooldown = 0;
 let poderRobloxCooldown = 0;
 let proximoPoderRoblox = "celular";
@@ -287,6 +288,11 @@ function selecionarPersonagem(id) {
   joao.energiaVoo = ENERGIA_MAXIMA_VOO_GOKU;
   joao.grande = false;
   joao.poderTempo = 0;
+  joao.montado = false;
+  joao.montaria = null;
+  joao.superMario = false;
+  poderNeymarCooldown = 0;
+  proximoPoderNeymar = "muletaPower";
   poderChavesCooldown = 0;
   poderChavesSucoCooldown = 90;
   proximoPoderChaves = "sanduichePresunto";
@@ -1308,6 +1314,7 @@ function resetarPersonagens() {
   meteoros.length = 0;
   poderes.length = 0;
   poderNeymarCooldown = 0;
+  proximoPoderNeymar = "muletaPower";
   genkiDamaCooldown = 0;
   poderRobloxCooldown = 0;
   proximoPoderRoblox = "celular";
@@ -1329,6 +1336,7 @@ function resetarPersonagens() {
   joao.invencivel = 80;
   joao.montado = false;
   joao.montaria = null;
+  joao.superMario = false;
   joao.grande = false;
   joao.poderTempo = 0;
   joao.nuvem = false;
@@ -1350,6 +1358,9 @@ function resetarPersonagens() {
   jogador2.agachado = false;
   jogador2.ataqueTempo = 0;
   jogador2.ataqueCooldown = 0;
+  jogador2.montado = false;
+  jogador2.montaria = null;
+  jogador2.superMario = false;
   jogador2.h = jogador2.alturaNormal;
 
 }
@@ -1894,6 +1905,10 @@ function desenharBoneco(p) {
   if (personagemAtual === "cr7" && buffonTempo > 0) desenharBuffonGuardiao(p);
   if (p.montado) desenharMontariaDoJogador(p);
   if (p.ataqueTempo > 0) desenharEfeitoGolpe(p, deslocamentoMontaria);
+  if (p.superMario) {
+    desenharSuperMario(p, deslocamentoMontaria);
+    return;
+  }
 
   if (p.avatar === "yoshi") {
     ctx.save();
@@ -1927,7 +1942,7 @@ function desenharBoneco(p) {
 
   if (p.avatar === "neymar") {
     desenharNeymarMuletas(p);
-    desenharEtiqueta(p.nome + " + muleta power", p.x + p.w / 2, p.y - 10);
+    desenharEtiqueta(p.nome + " • MULETA • FOGO • BRUNA", p.x + p.w / 2, p.y - 10);
     return;
   }
 
@@ -2034,7 +2049,13 @@ function desenharBoneco(p) {
 function desenharJogador2() {
   const p = jogador2;
   if (p.invencivel > 0 && Math.floor(frame / 5) % 2 === 0) return;
+  const deslocamentoMontaria = p.montado ? -18 : 0;
+  if (p.montado) desenharMontariaDoJogador(p);
   if (p.ataqueTempo > 0) desenharEfeitoGolpe(p, 0);
+  if (p.superMario) {
+    desenharSuperMario(p, deslocamentoMontaria);
+    return;
+  }
   ctx.save();
   ctx.translate(p.x + p.w / 2, 0);
   ctx.scale(p.direcao, 1);
@@ -2052,6 +2073,38 @@ function desenharJogador2() {
   ctx.fillRect(3, p.y + 47, 9, 11);
   ctx.restore();
   desenharEtiqueta("P2", p.x + p.w / 2, p.y - 9);
+}
+
+function desenharSuperMario(p, deslocamentoMontaria = 0) {
+  const y = p.y + deslocamentoMontaria;
+  ctx.save();
+  ctx.translate(p.direcao < 0 ? p.x + p.w : p.x, y);
+  if (p.direcao < 0) ctx.scale(-1, 1);
+  ctx.fillStyle = "#d90429";
+  ctx.fillRect(4, 0, 28, 8);
+  ctx.fillRect(0, 7, 35, 7);
+  ctx.fillStyle = "#f1b48b";
+  ctx.fillRect(7, 14, 23, 17);
+  ctx.fillStyle = "#5c2e12";
+  ctx.fillRect(4, 14, 7, 12);
+  ctx.fillRect(20, 25, 13, 5);
+  ctx.fillStyle = "#111111";
+  ctx.fillRect(25, 18, 4, 4);
+  ctx.fillRect(20, 25, 10, 3);
+  ctx.fillStyle = "#d90429";
+  ctx.fillRect(4, 31, 27, 13);
+  ctx.fillStyle = "#1971c2";
+  ctx.fillRect(8, 39, 20, 18);
+  ctx.fillRect(3, 43, 8, 14);
+  ctx.fillRect(25, 43, 8, 14);
+  ctx.fillStyle = "#ffd43b";
+  ctx.fillRect(10, 40, 4, 4);
+  ctx.fillRect(23, 40, 4, 4);
+  ctx.fillStyle = "#5c2e12";
+  ctx.fillRect(3, 55, 13, 5);
+  ctx.fillRect(22, 55, 13, 5);
+  ctx.restore();
+  desenharEtiqueta("SUPER MARIO + YOSHI", p.x + p.w / 2, y - 10);
 }
 
 function desenharEfeitoGolpe(p, deslocamentoMontaria) {
@@ -3419,17 +3472,30 @@ function dispararPoderNeymar() {
   if (joao.avatar !== "neymar" || poderNeymarCooldown > 0 || gameOver || venceu) return;
 
   poderNeymarCooldown = 34;
+  const tipo = proximoPoderNeymar;
+  const configuracoes = {
+    muletaPower: { nome: "Muleta Power", w: 24, h: 12, velocidade: 8.4, cor: "#ffe066", dano: 1 },
+    bolaFogoNeymar: { nome: "Bola de Fogo", w: 26, h: 26, velocidade: 7.4, cor: "#ff6b00", dano: 2 },
+    brunaMarquezine: { nome: "Poder Bruna Marquezine", w: 28, h: 38, velocidade: 6.8, cor: "#ff8fab", dano: 2 }
+  };
+  const config = configuracoes[tipo];
   poderes.push({
     dono: "neymar",
+    tipo,
+    nome: config.nome,
     x: joao.x + joao.w / 2 + joao.direcao * 18,
-    y: joao.y + 28,
-    w: 18,
-    h: 10,
-    vx: joao.direcao * 8.2,
+    y: joao.y + (tipo === "brunaMarquezine" ? 12 : 26),
+    w: config.w,
+    h: config.h,
+    vx: joao.direcao * config.velocidade,
     vy: -0.25,
-    cor: "#ffe066",
-    vida: 80
+    cor: config.cor,
+    vida: 90,
+    dano: config.dano
   });
+  const ciclo = ["muletaPower", "bolaFogoNeymar", "brunaMarquezine"];
+  proximoPoderNeymar = ciclo[(ciclo.indexOf(tipo) + 1) % ciclo.length];
+  mostrarAviso("NEYMAR: " + config.nome + "!");
   tocarSom("gol");
 }
 
@@ -3958,6 +4024,46 @@ function desenharPoderes() {
       return;
     }
 
+    if (poder.tipo === "muletaPower") {
+      ctx.save();
+      ctx.translate(poder.x + poder.w / 2, poder.y + poder.h / 2);
+      ctx.rotate(frame * 0.22 * (poder.vx > 0 ? 1 : -1));
+      ctx.strokeStyle = "#d0d7de";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(-9, -11); ctx.lineTo(5, 11); ctx.lineTo(10, 11);
+      ctx.moveTo(-12, -8); ctx.lineTo(-5, -13);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+
+    if (poder.tipo === "bolaFogoNeymar") {
+      ctx.fillStyle = "rgba(255,107,0,.3)";
+      ctx.fillRect(poder.x - 7, poder.y - 7, poder.w + 14, poder.h + 14);
+      ctx.fillStyle = "#e03131";
+      ctx.fillRect(poder.x, poder.y, poder.w, poder.h);
+      ctx.fillStyle = "#ff922b";
+      ctx.fillRect(poder.x + 4, poder.y + 4, poder.w - 8, poder.h - 8);
+      ctx.fillStyle = "#fff3bf";
+      ctx.fillRect(poder.x + 9, poder.y + 8, 7, 7);
+      return;
+    }
+
+    if (poder.tipo === "brunaMarquezine") {
+      ctx.fillStyle = "rgba(255,143,171,.28)";
+      ctx.fillRect(poder.x - 5, poder.y - 5, poder.w + 10, poder.h + 10);
+      ctx.fillStyle = "#5c2e12";
+      ctx.fillRect(poder.x + 5, poder.y, 18, 12);
+      ctx.fillStyle = "#f1b48b";
+      ctx.fillRect(poder.x + 7, poder.y + 8, 14, 11);
+      ctx.fillStyle = "#ff8fab";
+      ctx.fillRect(poder.x + 3, poder.y + 19, 22, 15);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(poder.x + 8, poder.y + 22, 12, 4);
+      return;
+    }
+
     ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
     ctx.fillRect(poder.x - 3, poder.y - 3, poder.w + 6, poder.h + 6);
     ctx.fillStyle = poder.cor;
@@ -4161,7 +4267,7 @@ function comerCogumelos() {
 function salvarYoshi() {
   const fase = fases[faseAtual];
   const yoshiBox = { x: fase.yoshi.x - 4, y: fase.yoshi.y, w: 70, h: 58 };
-  const candidatos = [joao];
+  const candidatos = multiplayerAtivo ? [joao, jogador2] : [joao];
 
   candidatos.forEach(p => {
     if (!colisao(p, yoshiBox)) return;
@@ -4170,6 +4276,7 @@ function salvarYoshi() {
     if (podeMontar && !fase.yoshi.montadoPor && !p.montado) {
       p.montado = true;
       p.montaria = "yoshi";
+      p.superMario = true;
       fase.yoshi.montadoPor = p.nome;
     }
 
@@ -4179,7 +4286,7 @@ function salvarYoshi() {
     }
     tocarSom("yoshi");
     criarParticulas(fase.yoshi.x + 30, fase.yoshi.y + 28, "#51d88a", 24);
-    mostrarAviso(podeMontar ? p.nome + " montou no Yoshi!" : p.nome + " resgatou o Yoshi!");
+    mostrarAviso(podeMontar ? p.nome + " virou SUPER MARIO ao montar no Yoshi!" : p.nome + " resgatou o Yoshi!");
   });
 }
 
