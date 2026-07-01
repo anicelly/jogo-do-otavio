@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reino Pixel Extremo</title>
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
   <main class="app">
@@ -25,6 +25,17 @@
 
     <section class="stage">
       <canvas id="game" width="960" height="540" aria-label="Jogo Reino Pixel Extremo"></canvas>
+      <div class="party-panel" aria-label="Grupo de aventureiros">
+        <div class="party-member"><span class="party-badge p1">P1</span><div><strong id="partyP1">Joao</strong><small>Herói principal</small></div></div>
+        <div class="party-member"><span class="party-badge p2">P2</span><div><strong id="partyP2">Luquinhas</strong><small id="partyMode">Aguardando coop</small></div></div>
+        <div class="xp-panel"><div><span id="levelLabel">NÍVEL 1</span><strong id="xpLabel">0 / 100 XP</strong></div><div class="xp-track"><span id="xpFill"></span></div></div>
+      </div>
+      <div class="mission-panel" aria-label="Missão atual">
+        <div class="mission-main"><span class="mission-eyebrow">MISSÃO ATUAL</span><strong id="missionObjective">Carregando objetivo...</strong><small id="missionHint">Prepare-se para a batalha.</small></div>
+        <div class="mission-stat"><span>PROGRESSO</span><strong id="missionProgress">0/0</strong></div>
+        <div class="mission-stat accent"><span>RITMO</span><strong id="missionCombo">NORMAL</strong></div>
+        <div class="mission-stat"><span>PRÊMIOS</span><strong id="missionRewards">0 ◉ · 0 ◆</strong></div>
+      </div>
       <div class="status">
         <strong id="mensagem">Fase 1</strong>
         <div class="actions">
@@ -59,6 +70,7 @@
     </section>
 
     <section class="touch-controls" aria-label="Controles para celular">
+      <div class="picker-heading"><div><span class="kicker">Elenco do reino</span><strong>Escolha o personagem do Jogador 1</strong></div><span class="picker-count">13 personagens</span></div>
       <div class="player-picker" aria-label="Escolher personagem">
         <button type="button" class="player-choice is-selected" data-character="joao">Joao</button>
         <button type="button" class="player-choice" data-character="luquinhas">Luquinhas</button>
@@ -92,6 +104,6 @@
     </section>
   </main>
 
-  <script src="script.js?v=33"></script>
+  <script src="script.js?v=34"></script>
 </body>
 </html>

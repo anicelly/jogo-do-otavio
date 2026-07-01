@@ -27,6 +27,10 @@ let faseBonusConcluida = false;
 let pausadoAntesLoja = false;
 let multiplayerAtivo = false;
 let personagem2Atual = "luquinhas";
+let comboCombate = 0;
+let comboCombateTempo = 0;
+let nivelRpg = 1;
+let experienciaRpg = 0;
 let carteira = carregarCarteira();
 let moedasLoja = carteira.moedas;
 let diamantes = carteira.diamantes;
@@ -82,6 +86,17 @@ const saldoLoja = document.getElementById("saldoLoja");
 const avisoLoja = document.getElementById("avisoLoja");
 const botaoMultiplayer = document.getElementById("botaoMultiplayer");
 const player2Character = document.getElementById("player2Character");
+const missionObjective = document.getElementById("missionObjective");
+const missionHint = document.getElementById("missionHint");
+const missionProgress = document.getElementById("missionProgress");
+const missionCombo = document.getElementById("missionCombo");
+const missionRewards = document.getElementById("missionRewards");
+const partyP1 = document.getElementById("partyP1");
+const partyP2 = document.getElementById("partyP2");
+const partyMode = document.getElementById("partyMode");
+const levelLabel = document.getElementById("levelLabel");
+const xpLabel = document.getElementById("xpLabel");
+const xpFill = document.getElementById("xpFill");
 
 function carregarCarteira() {
   const padrao = { moedas: 0, diamantes: 0, inventario: { vidas: 0, segundosExtras: 0 } };
@@ -147,6 +162,59 @@ function comprarItemLoja(item) {
   atualizarPainelLoja();
   avisoLoja.textContent = "Compra concluída e salva no inventário!";
   tocarSom("moeda");
+}
+
+function registrarComboCombate() {
+  comboCombate = comboCombateTempo > 0 ? comboCombate + 1 : 1;
+  comboCombateTempo = 150;
+  if (comboCombate >= 5 && comboCombate % 5 === 0) {
+    moedas += 2;
+    moedasLoja += 2;
+    salvarCarteira();
+    criarParticulas(joao.x + joao.w / 2, joao.y, "#ffd43b", 24);
+    mostrarAviso("RUSH x" + comboCombate + "! +2 moedas de estilo!");
+  }
+}
+
+function ganharExperiencia(quantidade) {
+  experienciaRpg += quantidade;
+  const necessario = nivelRpg * 100;
+  if (experienciaRpg >= necessario) {
+    experienciaRpg -= necessario;
+    nivelRpg++;
+    moedas += 10;
+    moedasLoja += 10;
+    salvarCarteira();
+    mostrarAviso("SUBIU PARA O NÍVEL " + nivelRpg + "! +10 moedas!");
+    tocarSom("vitoria");
+  }
+}
+
+function atualizarPainelMissao() {
+  if (!missionObjective || frame % 10 !== 0) return;
+  const fase = fases[faseAtual];
+  if (fase.bonus) {
+    const total = fase.destrutiveis.length;
+    const destruidos = fase.destrutiveis.filter(objeto => objeto.quebrado).length;
+    missionObjective.textContent = "Destrua o carro e o barril";
+    missionHint.textContent = "Ataque rápido: carro 12 golpes · barril 6 golpes · 8 segundos";
+    missionProgress.textContent = destruidos + "/" + total + " objetos";
+  } else {
+    const chefes = fase.inimigos.filter(ehChefeVilao);
+    const derrotados = fase.inimigos.filter(inimigo => inimigo.morto).length;
+    const chefesVivos = chefes.filter(chefe => !chefe.morto).length;
+    missionObjective.textContent = chefesVivos > 0 ? "Derrote os chefões e alcance o troféu" : "Caminho livre: entre no portal";
+    missionHint.textContent = fase.tipoArmadilha ? "Armadilha desta fase: " + fase.tipoArmadilha.nome : "Explore e colete os prêmios";
+    missionProgress.textContent = derrotados + "/" + fase.inimigos.length + " vilões";
+  }
+  missionCombo.textContent = comboCombate > 1 ? "RUSH x" + comboCombate : (multiplayerAtivo ? "COOP" : "NORMAL");
+  missionRewards.textContent = moedasLoja + " ◉ · " + diamantes + " ◆";
+  if (partyP1) partyP1.textContent = joao.nome;
+  if (partyP2) partyP2.textContent = jogador2.nome.replace(/^P2\s+/, "");
+  if (partyMode) partyMode.textContent = multiplayerAtivo ? "Membro ativo" : "Aguardando coop";
+  if (levelLabel) levelLabel.textContent = "NÍVEL " + nivelRpg;
+  if (xpLabel) xpLabel.textContent = experienciaRpg + " / " + (nivelRpg * 100) + " XP";
+  if (xpFill) xpFill.style.width = Math.min(100, experienciaRpg / (nivelRpg * 100) * 100) + "%";
 }
 
 function alternarMultiplayer() {
@@ -3780,6 +3848,8 @@ function atualizarGolpeJogador(jogador = joao, teclasAtaque = ["x", "X"]) {
     mostrarAviso(inimigo.morto ? (inimigo.nome || "Vilão") + " foi nocauteado!" : "Golpe acertou! Vida: " + inimigo.vida + "/" + inimigo.vidaMax);
     tocarSom(inimigo.morto ? "vitoria" : "pisao");
     tremor = 12;
+    registrarComboCombate();
+    ganharExperiencia(inimigo.morto ? 20 : 5);
   }
 
   const objeto = (fase.destrutiveis || []).find(item => !item.quebrado && colisao(alcance, item));
@@ -3792,6 +3862,7 @@ function atualizarGolpeJogador(jogador = joao, teclasAtaque = ["x", "X"]) {
     tocarSom("pisao");
     if (objeto.vida <= 0) {
       objeto.quebrado = true;
+      ganharExperiencia(objeto.tipo === "carroQuebravel" ? 35 : 15);
       const premioMoedas = objeto.tipo === "carroQuebravel" ? 10 : 3;
       moedas += premioMoedas;
       moedasLoja += premioMoedas;
@@ -4488,6 +4559,7 @@ function verificarPortal() {
       textoBonus = " Bônus de sobrevivência: +" + premioSobrevivencia + " moedas" + (faseAtual % 3 === 0 ? " e +1 diamante!" : "!");
     }
     mostrarAviso("Troféu conquistado: " + fase.campeonato.nome + "!" + textoBonus);
+    ganharExperiencia(30 + faseAtual * 5);
 
     faseAtual++;
 
@@ -4607,6 +4679,10 @@ function reiniciarJogo() {
   pontosDestruicao = 0;
   comboDestruicao = 0;
   comboDestruicaoTempo = 0;
+  comboCombate = 0;
+  comboCombateTempo = 0;
+  nivelRpg = 1;
+  experienciaRpg = 0;
   faseBonusTimer = 480;
   faseBonusConcluida = false;
   yoshis = 0;
@@ -4685,6 +4761,9 @@ function pixelRect(x, y, w, h) {
 
 function loop() {
   frame++;
+  if (comboCombateTempo > 0) comboCombateTempo--;
+  else comboCombate = 0;
+  atualizarPainelMissao();
 
   if (!jogoIniciado) {
     telaInicio();
