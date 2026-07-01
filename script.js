@@ -638,6 +638,23 @@ const fases = [
   }
 ];
 
+fases.unshift({
+  nome: "Fase Bônus - Destrua o Carro",
+  fundo: ["#243b55", "#101820"],
+  tema: "garagemBonus",
+  bonus: true,
+  plataformas: [
+    { x: 0, y: 486, w: 960, h: 54, tipo: "castelo" },
+    { x: 72, y: 390, w: 150, h: 22, tipo: "castelo" },
+    { x: 738, y: 390, w: 150, h: 22, tipo: "castelo" }
+  ],
+  portal: { x: 872, y: 426, w: 58, h: 60 },
+  yoshi: { x: 92, y: 346, salvo: false },
+  moedas: [],
+  cogumelos: [],
+  inimigos: []
+});
+
 const campeonatos = [
   { nome: "Copa do Rei", cor: "#f7c948" },
   { nome: "La Liga", cor: "#ff6b6b" },
@@ -670,11 +687,15 @@ const tiposArmadilha = [
 
 fases.forEach((fase, indice) => {
   fase.bonusTempoChefe = 0;
-  const campeonato = campeonatos[indice];
+  const campeonato = fase.bonus
+    ? { nome: "Desafio de Demolição", cor: "#ff922b" }
+    : campeonatos[indice - 1];
   fase.campeonato = campeonato;
-  fase.nome = indice === 0
-    ? "Fase 1 - Programa de Auditório: Silvio Santos"
-    : "Fase " + (indice + 1) + " - " + campeonato.nome;
+  fase.nome = fase.bonus
+    ? "Fase 1 - Bônus: Destrua o Carro"
+    : indice === 1
+      ? "Fase 2 - Programa de Auditório: Silvio Santos"
+      : "Fase " + (indice + 1) + " - " + campeonato.nome;
   fase.trofeu = {
     x: fase.portal.x + fase.portal.w / 2 - 18,
     y: fase.portal.y - 54,
@@ -690,8 +711,8 @@ fases.forEach((fase, indice) => {
     salvo: false,
     montadoPor: null
   };
-  if (indice === 0) fase.premio50 = { x: 758, y: 430, w: 48, h: 24, ativo: false, coletado: false };
-  fase.tipoArmadilha = tiposArmadilha[indice];
+  if (indice === 1) fase.premio50 = { x: 758, y: 430, w: 48, h: 24, ativo: false, coletado: false };
+  fase.tipoArmadilha = tiposArmadilha[Math.max(0, indice - 1) % tiposArmadilha.length];
   const plataformasFixas = fase.plataformas.filter(plataforma => !plataforma.movel && plataforma.w >= 48);
   fase.armadilhas = plataformasFixas.slice(0, 3).map((plataforma, armadilhaIndice) => ({
     x: Math.round(plataforma.x + plataforma.w * (armadilhaIndice % 2 === 0 ? 0.58 : 0.36) - 14),
@@ -745,14 +766,24 @@ fases.forEach((fase, indice) => {
       quebrado: false
     }
   ];
+  if (fase.bonus) {
+    fase.armadilhas = [];
+    fase.premiosDiamante = [];
+    fase.mufasa = null;
+    fase.destrutiveis = [
+      { tipo: "barrilQuebravel", x: 154, y: 444, w: 36, h: 42, vida: 2, vidaMax: 2, quebrado: false },
+      { tipo: "carroQuebravel", x: 350, y: 408, w: 260, h: 78, vida: 12, vidaMax: 12, quebrado: false },
+      { tipo: "barrilQuebravel", x: 770, y: 444, w: 36, h: 42, vida: 2, vidaMax: 2, quebrado: false }
+    ];
+  }
 });
 
 // Reforcos nas cinco primeiras fases para elevar a dificuldade inicial.
-fases[0].inimigos.push(criarVilao("cavaleiro", 730, 436, 2.4, 680, 860));
-fases[1].inimigos.push(criarVilao("meninoRoblox", 502, 428, 2.1, 470, 690));
-fases[2].inimigos.push(criarVilao("soldado", 456, 438, 3.0, 430, 610));
-fases[3].inimigos.push(criarVilao("meninoRoblox", 612, 428, 2.3, 570, 810));
-fases[4].inimigos.push(criarVilao("lobo", 748, 448, 3.6, 690, 880));
+fases[1].inimigos.push(criarVilao("cavaleiro", 730, 436, 2.4, 680, 860));
+fases[2].inimigos.push(criarVilao("meninoRoblox", 502, 428, 2.1, 470, 690));
+fases[3].inimigos.push(criarVilao("soldado", 456, 438, 3.0, 430, 610));
+fases[4].inimigos.push(criarVilao("meninoRoblox", 612, 428, 2.3, 570, 810));
+fases[5].inimigos.push(criarVilao("lobo", 748, 448, 3.6, 690, 880));
 
 function criarJogador(nome, x, corCamisa, corCalca, cabelo) {
   return {
@@ -1371,6 +1402,19 @@ function desenharFundo(fase) {
   if (fase.tema === "auditorio") {
     desenharProgramaAuditorio();
   }
+
+  if (fase.tema === "garagemBonus") {
+    ctx.fillStyle = "#18222d";
+    ctx.fillRect(0, 88, canvas.width, 330);
+    ctx.fillStyle = "#ffd43b";
+    for (let x = 0; x < canvas.width; x += 80) ctx.fillRect(x, 442, 42, 8);
+    ctx.fillStyle = "#7bdff2";
+    ctx.font = "bold 28px monospace";
+    ctx.fillText("DESAFIO BÔNUS DE DEMOLIÇÃO", 244, 142);
+    ctx.fillStyle = "#f7f3de";
+    ctx.font = "18px monospace";
+    ctx.fillText("GOLPEIE O CARRO COM X • DESTRUA PARA LIBERAR A SAÍDA", 176, 176);
+  }
 }
 
 function desenharProgramaAuditorio() {
@@ -1648,15 +1692,17 @@ function desenharDestrutiveis(fase) {
       ctx.fillRect(objeto.x, objeto.y + objeto.h - 12, objeto.w, 5);
     } else {
       const dano = 1 - objeto.vida / objeto.vidaMax;
+      const topoX = objeto.x + objeto.w * 0.22;
+      const topoW = objeto.w * 0.56;
       ctx.fillStyle = "#d90429";
-      ctx.fillRect(objeto.x, objeto.y + 14 + dano * 5, objeto.w, 22 - dano * 4);
-      ctx.fillRect(objeto.x + 17, objeto.y + 3 + dano * 3, 45, 18 - dano * 3);
+      ctx.fillRect(objeto.x, objeto.y + objeto.h * 0.34 + dano * 5, objeto.w, objeto.h * 0.48 - dano * 4);
+      ctx.fillRect(topoX, objeto.y + dano * 3, topoW, objeto.h * 0.4 - dano * 3);
       ctx.fillStyle = "#74c0fc";
-      ctx.fillRect(objeto.x + 23, objeto.y + 7, 16, 11);
-      ctx.fillRect(objeto.x + 43, objeto.y + 7, 14, 11);
+      ctx.fillRect(objeto.x + objeto.w * 0.29, objeto.y + 7, objeto.w * 0.18, objeto.h * 0.23);
+      ctx.fillRect(objeto.x + objeto.w * 0.52, objeto.y + 7, objeto.w * 0.16, objeto.h * 0.23);
       ctx.fillStyle = "#111111";
-      ctx.fillRect(objeto.x + 9, objeto.y + 32, 16, 10);
-      ctx.fillRect(objeto.x + 57, objeto.y + 32, 16, 10);
+      ctx.fillRect(objeto.x + objeto.w * 0.12, objeto.y + objeto.h * 0.72, objeto.w * 0.2, objeto.h * 0.24);
+      ctx.fillRect(objeto.x + objeto.w * 0.68, objeto.y + objeto.h * 0.72, objeto.w * 0.2, objeto.h * 0.24);
       ctx.fillStyle = "#ffd43b";
       ctx.fillRect(objeto.x + 2, objeto.y + 20, 8, 7);
       if (objeto.vida < objeto.vidaMax) {
@@ -4076,6 +4122,16 @@ function verificarPortal() {
   const fase = fases[faseAtual];
 
   if (colisao(joao, fase.portal)) {
+    if (fase.bonus) {
+      const carro = fase.destrutiveis.find(objeto => objeto.tipo === "carroQuebravel");
+      if (carro && !carro.quebrado) {
+        mostrarAviso("Destrua o carro para liberar a próxima fase!");
+        return;
+      }
+      if (fases[faseAtual + 1]) {
+        fases[faseAtual + 1].bonusTempoChefe += fase.bonusTempoChefe;
+      }
+    }
     const chefeVivo = fase.inimigos.some(i => ehChefeVilao(i) && !i.morto);
 
     if (chefeVivo) {
