@@ -1427,6 +1427,11 @@ function tocarSom(nome) {
     soco: () => { tocarTom(185, .07, "square", .065); tocarTom(110, .08, "triangle", .05, .03); },
     chute: () => { tocarTom(145, .1, "sawtooth", .07); tocarTom(290, .09, "square", .045, .04); },
     especial: () => { [110,220,440,880].forEach((nota,i) => tocarTom(nota,.13,"sawtooth",.055,i*.035)); },
+    esfera: () => {
+      tocarTom(330, 0.1, "sawtooth", 0.055);
+      tocarTom(660, 0.14, "triangle", 0.05, 0.04);
+      tocarTom(990, 0.18, "sine", 0.04, 0.09);
+    },
     portal: () => {
       tocarTom(392, 0.1, "sine", 0.045);
       tocarTom(523, 0.1, "sine", 0.045, 0.08);
@@ -2188,7 +2193,7 @@ function desenharBoneco(p) {
   const passo = p.andando && p.noChao ? Math.floor(frame / 7) % 2 : 0;
   const piscando = p.invencivel > 0 && Math.floor(frame / 5) % 2 === 0;
   if (piscando) return;
-  const deslocamentoMontaria = p.montado ? -18 : 0;
+  const deslocamentoMontaria = p.montado ? -30 : 0;
   if (personagemAtual === "cr7" && buffonTempo > 0) desenharBuffonGuardiao(p);
   if (p.montado) desenharMontariaDoJogador(p);
   if (p.ataqueTempo > 0) desenharEfeitoGolpe(p, deslocamentoMontaria);
@@ -2336,7 +2341,7 @@ function desenharBoneco(p) {
 function desenharJogador2() {
   const p = jogador2;
   if (p.invencivel > 0 && Math.floor(frame / 5) % 2 === 0) return;
-  const deslocamentoMontaria = p.montado ? -18 : 0;
+  const deslocamentoMontaria = p.montado ? -30 : 0;
   if (p.montado) desenharMontariaDoJogador(p);
   if (p.ataqueTempo > 0) desenharEfeitoGolpe(p, 0);
   if (p.superMario) {
@@ -2482,7 +2487,7 @@ function desenharNeymarMuletas(p) {
   const piscando = p.invencivel > 0 && Math.floor(frame / 5) % 2 === 0;
   if (piscando) return;
 
-  const baseY = p.montado ? p.y - 18 : p.y;
+  const baseY = p.montado ? p.y - 30 : p.y;
 
   ctx.save();
   if (p.direcao === -1) {
@@ -2627,9 +2632,12 @@ function desenharYoshi(yoshi) {
   if (yoshi.montadoPor) return;
 
   const bob = Math.sin(frame / 12) * 3;
-  const x = yoshi.x;
-  const y = yoshi.y + bob;
-  desenharSpriteYoshi(x, y, 1, yoshi.salvo);
+  ctx.save();
+  ctx.translate(yoshi.x - 12, yoshi.y - 18 + bob);
+  ctx.scale(1.35, 1.35);
+  desenharSpriteYoshi(0, 0, 1, yoshi.salvo);
+  ctx.restore();
+  desenharEtiqueta("Yoshi Gigante", yoshi.x + 30, yoshi.y - 28 + bob);
 }
 
 function desenharMufasa(mufasa, direcao = 1, montado = false) {
@@ -2670,9 +2678,11 @@ function desenharMufasa(mufasa, direcao = 1, montado = false) {
 }
 
 function desenharYoshiMontaria(jogador) {
-  const x = jogador.x - 12;
-  const y = jogador.y + 22;
-  desenharSpriteYoshi(x, y, jogador.direcao, true);
+  ctx.save();
+  ctx.translate(jogador.x + jogador.w / 2, jogador.y + jogador.h + 12);
+  ctx.scale(jogador.direcao * 1.35, 1.35);
+  desenharSpriteYoshi(-31, -54, 1, true);
+  ctx.restore();
 }
 
 function desenharMontariaDoJogador(jogador) {
@@ -2973,7 +2983,7 @@ function desenharBossSupremo(i, copia = false) {
   ctx.restore();
 
   if (copia) {
-    desenharEtiqueta("COPIA", i.x + i.w / 2, i.y - 8);
+    desenharEtiqueta("ILUSAO", i.x + i.w / 2, i.y - 8);
     return;
   }
 
@@ -3734,7 +3744,7 @@ function atualizarClonesBossSupremo(boss) {
     boss.ultimoClone = frame;
     tocarSom("portal");
     criarParticulas(x + boss.w / 2, boss.y + boss.h / 2, "#c77dff", 30);
-    mostrarAviso("O Boss Supremo criou uma copia!");
+    mostrarAviso("O Boss Supremo criou uma ilusao!");
   }
 
   for (let c = boss.clones.length - 1; c >= 0; c--) {
@@ -3751,7 +3761,7 @@ function atualizarClonesBossSupremo(boss) {
       joao.velY = -7;
       criarParticulas(clone.x + clone.w / 2, clone.y + clone.h / 2, "#9d4edd", 24);
       tocarSom("pisao");
-      mostrarAviso("Era uma copia! Procure o Boss verdadeiro.");
+      mostrarAviso("Era uma ilusao! Procure o Boss verdadeiro.");
     }
   }
 }
@@ -4076,6 +4086,11 @@ function atualizarGolpeJogador(jogador = joao, teclasAtaque = ["x", "X"]) {
   else comboDestruicao = 0;
   if (!jogoIniciado || pausado || gameOver || venceu || jogador.ataqueCooldown > 0 || !teclaAtiva(teclasAtaque)) return;
 
+  if (jogador.montado && jogador.montaria === "yoshi") {
+    dispararEsferaDragao(jogador);
+    return;
+  }
+
   jogador.comboGolpe = ((jogador.comboGolpe ?? -1) + 1) % 3;
   const golpes = [
     { nome: "SOCO", dano: 8, alcance: 52, cooldown: 17 },
@@ -4169,6 +4184,30 @@ function atualizarGolpeJogador(jogador = joao, teclasAtaque = ["x", "X"]) {
   }
 }
 
+function dispararEsferaDragao(jogador) {
+  jogador.ataqueTempo = 10;
+  jogador.ataqueCooldown = 24;
+  const estrelas = 1 + Math.floor(Math.random() * 7);
+  poderes.push({
+    dono: "yoshiPlayer",
+    tipo: "esferaDragao",
+    nome: "Esfera do Dragao " + estrelas + " estrelas",
+    estrelas,
+    x: jogador.x + jogador.w / 2 + jogador.direcao * 30,
+    y: jogador.y + 20,
+    w: 30,
+    h: 30,
+    vx: jogador.direcao * 9.2,
+    vy: -0.3,
+    cor: "#ff8c00",
+    vida: 125,
+    dano: estrelas >= 6 ? 3 : estrelas >= 3 ? 2 : 1
+  });
+  tocarSom("esfera");
+  criarParticulas(jogador.x + jogador.w / 2, jogador.y + 30, "#ffd43b", 18);
+  mostrarAviso("Yoshi lancou uma esfera de " + estrelas + " estrelas!");
+}
+
 function atualizarPoderes() {
   for (let p = poderes.length - 1; p >= 0; p--) {
     const poder = poderes[p];
@@ -4204,7 +4243,7 @@ function atualizarPoderes() {
       return;
     }
 
-    if (poder.dono === "neymar" || poder.dono === "goku" || poder.dono === "robloxPlayer" || poder.dono === "cr7" || poder.dono === "chavesPlayer" || poder.dono === "esqueletoPlayer" || poder.dono === "silvioPlayer") {
+    if (poder.dono === "neymar" || poder.dono === "goku" || poder.dono === "robloxPlayer" || poder.dono === "cr7" || poder.dono === "chavesPlayer" || poder.dono === "esqueletoPlayer" || poder.dono === "silvioPlayer" || poder.dono === "yoshiPlayer") {
       const alvo = fases[faseAtual].inimigos.find(i => !i.morto && colisao(i, poder));
       if (alvo) {
         const dano = poder.dano || (poder.dono === "goku" || poder.dono === "cr7" ? 2 : 1);
@@ -4243,6 +4282,32 @@ function atualizarPoderes() {
 
 function desenharPoderes() {
   poderes.forEach(poder => {
+    if (poder.tipo === "esferaDragao") {
+      ctx.save();
+      const pulso = 1 + Math.sin(frame / 4) * 0.08;
+      ctx.translate(poder.x + poder.w / 2, poder.y + poder.h / 2);
+      ctx.scale(pulso, pulso);
+      ctx.fillStyle = "rgba(255, 214, 59, 0.28)";
+      ctx.beginPath();
+      ctx.arc(0, 0, 20, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#ff8c00";
+      ctx.beginPath();
+      ctx.arc(0, 0, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#ffd43b";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.fillStyle = "#d90429";
+      const total = Math.min(7, poder.estrelas || 1);
+      for (let s = 0; s < total; s++) {
+        const angulo = (Math.PI * 2 * s) / total - Math.PI / 2;
+        ctx.fillRect(Math.cos(angulo) * 7 - 1.5, Math.sin(angulo) * 7 - 1.5, 3, 3);
+      }
+      ctx.restore();
+      return;
+    }
+
     if (poder.tipo === "buffonCR7") {
       ctx.fillStyle = "rgba(116,192,252,0.25)";
       ctx.fillRect(poder.x - 4, poder.y - 4, poder.w + 8, poder.h + 8);
@@ -4660,17 +4725,16 @@ function comerCogumelos() {
 
 function salvarYoshi() {
   const fase = fases[faseAtual];
-  const yoshiBox = { x: fase.yoshi.x - 4, y: fase.yoshi.y, w: 70, h: 58 };
+  const yoshiBox = { x: fase.yoshi.x - 16, y: fase.yoshi.y - 20, w: 94, h: 80 };
   const candidatos = multiplayerAtivo ? [joao, jogador2] : [joao];
 
   candidatos.forEach(p => {
     if (!colisao(p, yoshiBox)) return;
 
-    const podeMontar = p.avatar === "humano" || p.avatar === "neymar";
-    if (podeMontar && !fase.yoshi.montadoPor && !p.montado) {
+    if (!fase.yoshi.montadoPor && !p.montado && !p.nuvem) {
       p.montado = true;
       p.montaria = "yoshi";
-      p.superMario = true;
+      p.superMario = false;
       fase.yoshi.montadoPor = p.nome;
     }
 
@@ -4680,7 +4744,7 @@ function salvarYoshi() {
     }
     tocarSom("yoshi");
     criarParticulas(fase.yoshi.x + 30, fase.yoshi.y + 28, "#51d88a", 24);
-    mostrarAviso(podeMontar ? p.nome + " virou SUPER MARIO ao montar no Yoshi!" : p.nome + " resgatou o Yoshi!");
+    mostrarAviso(p.montaria === "yoshi" ? p.nome + " montou no Yoshi Gigante! Use GOLPE para lançar esferas." : p.nome + " resgatou o Yoshi!");
   });
 }
 
