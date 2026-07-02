@@ -68,6 +68,7 @@ const AJUSTE_MESSI_JOGAVEL = 0.65;
 const AJUSTE_METEORO_JOGAVEL = 0.62;
 const AJUSTE_PODER_VILAO_JOGAVEL = 0.7;
 const ESCALA_VISUAL_PLAYER = 1.28;
+const MODO_HARD_GLOBAL = true;
 const ALTURA_MINIMA_VOO_GOKU = 96;
 const ENERGIA_MAXIMA_VOO_GOKU = 300;
 let chefeTimer = null;
@@ -226,6 +227,11 @@ function atualizarPainelMissao() {
     missionObjective.textContent = "Destrua o carro e o barril";
     missionHint.textContent = "Ataque rápido: carro 12 golpes · barril 6 golpes · 8 segundos";
     missionProgress.textContent = destruidos + "/" + total + " objetos";
+  } else if (fase.labirinto) {
+    const coletadas = fase.moedas.filter(moeda => moeda.coletada).length;
+    missionObjective.textContent = "Encontre a saida do labirinto verdadeiro";
+    missionHint.textContent = "Evite Pacs, ilusoes e areia movedica";
+    missionProgress.textContent = coletadas + "/" + fase.moedas.length + " moedas";
   } else {
     const chefes = fase.inimigos.filter(ehChefeVilao);
     const derrotados = fase.inimigos.filter(inimigo => inimigo.morto).length;
@@ -382,8 +388,9 @@ const personagensDisponiveis = {
   cr7: { nome: "CR7", camisa: "#f7f3de", calca: "#d90429", cabelo: "#24130c", avatar: "humano", numero: "7" },
   messi: { nome: "Messi", camisa: "#74c0fc", calca: "#ffffff", cabelo: "#5c2e12", avatar: "humano", numero: "10" },
   yoshi: { nome: "Yoshi", camisa: "#36c96b", calca: "#f7f3de", cabelo: "#36c96b", avatar: "yoshi", numero: "" },
-  lobo: { nome: "Lobo", camisa: "#6c757d", calca: "#2b2d42", cabelo: "#495057", avatar: "lobo", numero: "" },
-  miaw: { nome: "Miaw", camisa: "#ffd43b", calca: "#fff3bf", cabelo: "#ffd43b", avatar: "miaw", numero: "" },
+  harry: { nome: "Harry Potter", camisa: "#5c2e12", calca: "#111827", cabelo: "#111111", avatar: "harry", numero: "HP" },
+  rangerVermelho: { nome: "Power Ranger Vermelho", camisa: "#d90429", calca: "#f7f3de", cabelo: "#d90429", avatar: "rangerVermelho", numero: "R" },
+  ancelotti: { nome: "Carlo Ancelotti", camisa: "#1d3557", calca: "#111827", cabelo: "#d0d7de", avatar: "ancelotti", numero: "CA" },
   neymar: { nome: "Neymar", camisa: "#ffe066", calca: "#2457c5", cabelo: "#f7c948", avatar: "neymar", numero: "10" },
   goku: { nome: "Goku", camisa: "#ff7b00", calca: "#0b5ed7", cabelo: "#111111", avatar: "goku", numero: "" },
   meninoRoblox: { nome: "Menino Roblox", camisa: "#e03131", calca: "#1971c2", cabelo: "#5c2e12", avatar: "meninoRoblox", numero: "R" },
@@ -395,8 +402,8 @@ const personagensDisponiveis = {
 const perfisLutadores = {
   joao: ["Lutador equilibrado · combo corpo a corpo", 7, 7, 6], luquinhas: ["Ágil e resistente", 6, 8, 6],
   cr7: ["Bicicletas, Buffon e SIUUU", 9, 8, 9], yoshi: ["Mobilidade e salto", 6, 9, 7],
-  messi: ["Drible e bola de ouro", 8, 9, 9], lobo: ["Força selvagem", 9, 7, 6],
-  miaw: ["Energia elétrica", 7, 9, 8], neymar: ["Muleta, fogo e Bruna", 8, 9, 9],
+  messi: ["Drible e bola de ouro", 8, 9, 9], harry: ["Pomo dourado e voo na vassoura", 7, 9, 10],
+  rangerVermelho: ["Espada de energia vermelha", 9, 8, 9], ancelotti: ["Lança Endrick em cima do banco", 8, 6, 10], neymar: ["Muleta, fogo e Bruna", 8, 9, 9],
   goku: ["Voo e Genki Dama", 10, 8, 10], meninoRoblox: ["Celular e placa", 7, 8, 8],
   chaves: ["Barril, sanduíche e tamarindo", 8, 6, 9], esqueleto: ["Cortes duplos", 9, 7, 8],
   silvioSantos: ["Jequiti e microfone", 7, 7, 10]
@@ -873,6 +880,60 @@ const fases = [
       criarCellBesta(642, 392),
       criarBossSupremo(706, 384)
     ]
+  },
+  {
+    nome: "Fase 13 - Castelo Medieval: Muralhas de Ferro",
+    fundo: ["#343a40", "#101216"],
+    tema: "castelo",
+    plataformas: [
+      { x: 0, y: 486, w: 960, h: 54, tipo: "castelo" },
+      { x: 92, y: 402, w: 128, h: 22, tipo: "castelo" },
+      { x: 278, y: 342, w: 124, h: 22, tipo: "castelo" },
+      { x: 468, y: 282, w: 126, h: 22, tipo: "castelo" },
+      { x: 654, y: 342, w: 122, h: 22, tipo: "castelo" },
+      { x: 806, y: 266, w: 116, h: 22, tipo: "castelo" }
+    ],
+    portal: { x: 844, y: 206, w: 58, h: 60 },
+    yoshi: { x: 102, y: 346, salvo: false },
+    moedas: [
+      { x: 146, y: 360, coletada: false }, { x: 328, y: 300, coletada: false },
+      { x: 516, y: 240, coletada: false }, { x: 706, y: 300, coletada: false },
+      { x: 858, y: 224, coletada: false }
+    ],
+    cogumelos: [{ x: 370, y: 310, coletado: false }],
+    inimigos: [
+      criarVilao("esqueleto", 236, 428, 3.0, 184, 366),
+      criarVilao("cavaleiro", 438, 436, 4.2, 398, 574),
+      criarVilao("esqueleto", 640, 428, 3.5, 600, 770),
+      criarVilao("cavaleiro", 790, 436, 4.6, 754, 914)
+    ]
+  },
+  {
+    nome: "Fase 14 - Torre Medieval do Mandibu",
+    fundo: ["#241f2e", "#07070b"],
+    tema: "castelo",
+    plataformas: [
+      { x: 0, y: 486, w: 960, h: 54, tipo: "castelo" },
+      { x: 84, y: 394, w: 118, h: 22, tipo: "castelo" },
+      { x: 256, y: 330, w: 112, h: 22, tipo: "castelo" },
+      { x: 426, y: 268, w: 112, h: 22, tipo: "castelo" },
+      { x: 596, y: 330, w: 112, h: 22, tipo: "castelo" },
+      { x: 766, y: 394, w: 138, h: 22, tipo: "castelo" }
+    ],
+    portal: { x: 846, y: 334, w: 58, h: 60 },
+    yoshi: { x: 96, y: 338, salvo: false },
+    moedas: [
+      { x: 132, y: 352, coletada: false }, { x: 302, y: 288, coletada: false },
+      { x: 476, y: 226, coletada: false }, { x: 646, y: 288, coletada: false },
+      { x: 824, y: 352, coletada: false }
+    ],
+    cogumelos: [{ x: 480, y: 236, coletado: false }],
+    inimigos: [
+      criarVilao("esqueleto", 224, 428, 3.4, 184, 350),
+      criarVilao("cavaleiro", 466, 436, 4.4, 410, 574),
+      criarVilao("esqueleto", 650, 428, 3.8, 600, 748),
+      criarMandibu(746, 398)
+    ]
   }
 ];
 
@@ -900,9 +961,25 @@ fases.push({
   labirinto: true,
   plataformas: [{ x: 0, y: 486, w: 960, h: 54, tipo: "castelo" }],
   paredesLabirinto: [
-    { x: 150, y: 370, w: 34, h: 116 }, { x: 286, y: 348, w: 34, h: 138 },
-    { x: 422, y: 390, w: 34, h: 96 }, { x: 558, y: 352, w: 34, h: 134 },
-    { x: 694, y: 376, w: 34, h: 110 }, { x: 812, y: 350, w: 34, h: 136 }
+    { x: 128, y: 252, w: 34, h: 234 }, { x: 248, y: 330, w: 34, h: 156 },
+    { x: 368, y: 220, w: 34, h: 266 }, { x: 488, y: 348, w: 34, h: 138 },
+    { x: 608, y: 242, w: 34, h: 244 }, { x: 728, y: 326, w: 34, h: 160 },
+    { x: 830, y: 208, w: 34, h: 278 }
+  ],
+  ilusoesLabirinto: [
+    { x: 202, y: 420, w: 34, h: 66, destinoX: 54, destinoY: 420 },
+    { x: 548, y: 420, w: 34, h: 66, destinoX: 286, destinoY: 420 },
+    { x: 782, y: 420, w: 34, h: 66, destinoX: 430, destinoY: 420 }
+  ],
+  areiasMovedicas: [
+    { x: 164, y: 466, w: 80, h: 20 },
+    { x: 404, y: 466, w: 82, h: 20 },
+    { x: 642, y: 466, w: 84, h: 20 }
+  ],
+  pacmans: [
+    { x: 188, y: 410, w: 34, h: 34, velocidade: 1.05, cor: "#ffd43b" },
+    { x: 516, y: 300, w: 34, h: 34, velocidade: 1.18, cor: "#ff6b6b" },
+    { x: 752, y: 390, w: 34, h: 34, velocidade: 1.28, cor: "#74c0fc" }
   ],
   portal: { x: 886, y: 426, w: 58, h: 60 },
   yoshi: { x: -200, y: 432, salvo: false },
@@ -930,7 +1007,9 @@ const campeonatos = [
   { nome: "Premier League", cor: "#b197fc" },
   { nome: "Serie A", cor: "#4dabf7" },
   { nome: "Sauditão", cor: "#69db7c" },
-  { nome: "Copa do Mundo", cor: "#ffd43b" }
+  { nome: "Copa do Mundo", cor: "#ffd43b" },
+  { nome: "Copa Medieval", cor: "#adb5bd" },
+  { nome: "Trono de Mandibu", cor: "#c77dff" }
 ];
 
 const tiposArmadilha = [
@@ -1068,6 +1147,13 @@ fases[2].inimigos.push(criarVilao("meninoRoblox", 502, 428, 2.1, 470, 690));
 fases[3].inimigos.push(criarVilao("soldado", 456, 438, 3.0, 430, 610));
 fases[4].inimigos.push(criarVilao("meninoRoblox", 612, 428, 2.3, 570, 810));
 fases[5].inimigos.push(criarVilao("lobo", 748, 448, 3.6, 690, 880));
+
+// Elenco atual: remove criaturas descontinuadas e suas montarias de todas as fases.
+fases.forEach(fase => {
+  fase.mufasa = null;
+  fase.miaw = null;
+  fase.inimigos = fase.inimigos.filter(inimigo => inimigo.tipo !== "lobo");
+});
 
 function criarJogador(nome, x, corCamisa, corCalca, cabelo) {
   return {
@@ -1210,6 +1296,27 @@ function criarBossSupremo(x, y) {
   };
 }
 
+function criarMandibu(x, y) {
+  return {
+    tipo: "mandibu",
+    nome: "Mandibu",
+    x,
+    y,
+    w: 78,
+    h: 88,
+    vel: 2.8,
+    min: 690,
+    max: 884,
+    direcao: -1,
+    vida: 10,
+    vidaMax: 10,
+    invencivel: 0,
+    morto: false,
+    tempoAtivo: 0,
+    tempoMinimoDerrota: 3600
+  };
+}
+
 function colisao(a, b) {
   return (
     a.x < b.x + b.w &&
@@ -1225,11 +1332,16 @@ function mostrarAviso(texto) {
 }
 
 function dificuldadeFinal() {
-  return 1.02 + faseAtual * 0.075 + (faseAtual >= 5 ? 0.14 : 0) + (faseAtual >= 9 ? 0.1 : 0);
+  const progressao = 1.16 + faseAtual * 0.065 + (faseAtual >= 5 ? 0.12 : 0) + (faseAtual >= 9 ? 0.08 : 0);
+  return Math.min(2.15, progressao);
 }
 
 function ehChefeVilao(vilao) {
-  return vilao.tipo === "chefe" || vilao.tipo === "rei" || vilao.tipo === "cellbesta" || vilao.tipo === "bossSupremo" || vilao.tipo === "silvioBoss";
+  return vilao.tipo === "chefe" || vilao.tipo === "rei" || vilao.tipo === "cellbesta" || vilao.tipo === "bossSupremo" || vilao.tipo === "silvioBoss" || vilao.tipo === "mandibu";
+}
+
+function mandibuProtegido(vilao) {
+  return vilao.tipo === "mandibu" && vilao.tempoAtivo < vilao.tempoMinimoDerrota;
 }
 
 function chefesVivosDaFase() {
@@ -1267,8 +1379,9 @@ function atualizarTimerChefe() {
     const extraInventario = Math.min(30, inventarioLoja.segundosExtras);
     inventarioLoja.segundosExtras -= extraInventario;
     if (extraInventario > 0) salvarCarteira();
-    chefeTimer = 2700 + (bonusFase + extraInventario) * 60;
-    mostrarAviso("Derrote todos os chefões em " + (45 + bonusFase + extraInventario) + " segundos!");
+    const segundosBase = chefesVivos.some(chefe => chefe.tipo === "mandibu") ? 75 : faseAtual >= 9 ? 38 : faseAtual >= 5 ? 40 : 42;
+    chefeTimer = segundosBase * 60 + (bonusFase + extraInventario) * 60;
+    mostrarAviso("MODO HARD: derrote os chefões em " + (segundosBase + bonusFase + extraInventario) + " segundos!");
   }
 
   chefeTimerAlvo = chefesVivos[0];
@@ -1622,13 +1735,14 @@ function teclaAtiva(tecla) {
 
 function atualizarPlataformasMoveis() {
   const fase = fases[faseAtual];
+  const ritmoHard = MODO_HARD_GLOBAL ? Math.min(1.28, 1.12 + faseAtual * 0.015) : 1;
 
   fase.plataformas.forEach(plataforma => {
     if (!plataforma.movel) return;
     if (plataforma.baseX === undefined) plataforma.baseX = plataforma.x;
 
     plataforma.prevX = plataforma.x;
-    plataforma.x += plataforma.vel * AJUSTE_VELOCIDADE_JOGAVEL;
+    plataforma.x += plataforma.vel * AJUSTE_VELOCIDADE_JOGAVEL * ritmoHard;
 
     if (plataforma.x <= plataforma.min || plataforma.x + plataforma.w >= plataforma.max) {
       plataforma.vel *= -1;
@@ -1644,7 +1758,7 @@ function moverPersonagem(p, esquerda, direita, pulo, baixo = ["s", "ArrowDown"])
   p.prevY = p.y;
   p.velX = 0;
   p.andando = false;
-  if (p.avatar !== "goku") p.nuvem = false;
+  if (p.avatar !== "goku" && p.avatar !== "harry") p.nuvem = false;
   const querAbaixar = teclaAtiva(baixo);
 
   if (querAbaixar && !p.agachado && !p.montado && !p.nuvem) {
@@ -1731,15 +1845,65 @@ function atualizarDesafioLabirinto() {
   const fase = fases[faseAtual];
   if (!fase.labirinto) return;
   jogadoresAtivos().forEach(jogador => {
+    if (jogador.labirintoCooldown > 0) jogador.labirintoCooldown--;
     const parede = fase.paredesLabirinto.find(item => colisao(jogador, item));
     if (parede) {
       jogador.x = jogador.prevX;
       jogador.velX = 0;
     }
+
+    const areia = (fase.areiasMovedicas || []).find(item => colisao(jogador, item));
+    if (areia) {
+      jogador.x = jogador.prevX + (jogador.x - jogador.prevX) * 0.28;
+      jogador.velY = Math.min(3.8, jogador.velY + 0.45);
+      if (frame % 70 === 0) mostrarAviso("AREIA MOVEDICA! Pule para escapar.");
+    }
+
+    const ilusao = (fase.ilusoesLabirinto || []).find(item => colisao(jogador, item));
+    if (ilusao && jogador.labirintoCooldown <= 0) {
+      jogador.x = ilusao.destinoX;
+      jogador.y = ilusao.destinoY;
+      jogador.velX = 0;
+      jogador.velY = 0;
+      jogador.labirintoCooldown = 120;
+      flashImpacto = 10;
+      tocarSom("portal");
+      mostrarAviso("ILUSAO! Voce voltou para outro corredor.");
+    }
   });
+  atualizarPacmansLabirinto(fase);
   if (multiplayerAtivo && joao.invencivel <= 0 && jogador2.invencivel <= 0 && colisao(joao, jogador2)) {
     derrotarJogadores("Os jogadores se trombaram no labirinto!");
   }
+}
+
+function atualizarPacmansLabirinto(fase) {
+  (fase.pacmans || []).forEach(pac => {
+    if (pac.baseX === undefined) {
+      pac.baseX = pac.x;
+      pac.baseY = pac.y;
+    }
+    const alvo = jogadoresAtivos().reduce((maisPerto, jogador) => {
+      const distancia = Math.hypot(jogador.x - pac.x, jogador.y - pac.y);
+      return !maisPerto || distancia < maisPerto.distancia ? { jogador, distancia } : maisPerto;
+    }, null)?.jogador;
+    if (!alvo) return;
+
+    const dx = alvo.x + alvo.w / 2 - (pac.x + pac.w / 2);
+    const dy = alvo.y + alvo.h / 2 - (pac.y + pac.h / 2);
+    const distancia = Math.max(1, Math.hypot(dx, dy));
+    pac.x += dx / distancia * pac.velocidade;
+    pac.y += dy / distancia * pac.velocidade * 0.65;
+    pac.x = Math.max(8, Math.min(canvas.width - pac.w - 8, pac.x));
+    pac.y = Math.max(190, Math.min(448, pac.y));
+
+    const atingido = jogadoresAtivos().find(jogador => jogador.invencivel <= 0 && colisao(jogador, pac));
+    if (atingido) {
+      criarParticulas(pac.x + 17, pac.y + 17, pac.cor, 28);
+      tocarSom("dano");
+      derrotarJogadores("Um Pac encontrou o jogador no labirinto!");
+    }
+  });
 }
 
 function desenharFundo(fase) {
@@ -1830,7 +1994,7 @@ function desenharFundo(fase) {
     ctx.fillText("LABIRINTO DAS MOEDAS", 338, 146);
     ctx.fillStyle = "#f7f3de";
     ctx.font = "15px monospace";
-    ctx.fillText("NO COOP, NÃO ENCOSTE NO OUTRO JOGADOR", 298, 176);
+    ctx.fillText("ILUSOES • AREIA MOVEDICA • PACS PERSEGUIDORES", 268, 176);
   }
 }
 
@@ -1842,6 +2006,40 @@ function desenharParedesLabirinto(fase) {
     for (let y = parede.y + 8; y < parede.y + parede.h; y += 22) ctx.fillRect(parede.x + 5, y, parede.w - 10, 5);
     ctx.strokeStyle = "#c77dff";
     ctx.strokeRect(parede.x, parede.y, parede.w, parede.h);
+  });
+}
+
+function desenharPerigosLabirinto(fase) {
+  (fase.areiasMovedicas || []).forEach(areia => {
+    ctx.fillStyle = "#a66a2c";
+    ctx.fillRect(areia.x, areia.y, areia.w, areia.h);
+    ctx.fillStyle = "#d4a373";
+    for (let x = areia.x + 5; x < areia.x + areia.w; x += 14) {
+      ctx.fillRect(x, areia.y + 5 + Math.sin((frame + x) / 8) * 3, 9, 4);
+    }
+  });
+
+  (fase.ilusoesLabirinto || []).forEach((ilusao, indice) => {
+    ctx.fillStyle = "rgba(199,125,255," + (0.18 + Math.sin(frame / 10 + indice) * 0.08) + ")";
+    ctx.fillRect(ilusao.x, ilusao.y, ilusao.w, ilusao.h);
+    ctx.strokeStyle = "#c77dff";
+    ctx.strokeRect(ilusao.x, ilusao.y, ilusao.w, ilusao.h);
+    ctx.fillStyle = "#f7f3de";
+    ctx.font = "bold 10px monospace";
+    ctx.fillText("?", ilusao.x + 14, ilusao.y + 34);
+  });
+
+  (fase.pacmans || []).forEach(pac => {
+    const boca = Math.abs(Math.sin(frame / 5)) * 0.65;
+    const direcao = joao.x >= pac.x ? 0 : Math.PI;
+    ctx.fillStyle = pac.cor;
+    ctx.beginPath();
+    ctx.moveTo(pac.x + 17, pac.y + 17);
+    ctx.arc(pac.x + 17, pac.y + 17, 17, direcao + boca, direcao + Math.PI * 2 - boca);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#111111";
+    ctx.fillRect(pac.x + 15, pac.y + 6, 4, 4);
   });
 }
 
@@ -2193,12 +2391,28 @@ function desenharBoneco(p) {
   const passo = p.andando && p.noChao ? Math.floor(frame / 7) % 2 : 0;
   const piscando = p.invencivel > 0 && Math.floor(frame / 5) % 2 === 0;
   if (piscando) return;
-  const deslocamentoMontaria = p.montado ? -30 : 0;
+  const deslocamentoMontaria = p.montado ? -30 : p.nuvem && p.avatar === "harry" ? -18 : 0;
   if (personagemAtual === "cr7" && buffonTempo > 0) desenharBuffonGuardiao(p);
   if (p.montado) desenharMontariaDoJogador(p);
+  if (p.avatar === "harry" && p.nuvem) desenharVassouraMontada(p);
   if (p.ataqueTempo > 0) desenharEfeitoGolpe(p, deslocamentoMontaria);
   if (p.superMario) {
     desenharSuperMario(p, deslocamentoMontaria);
+    return;
+  }
+
+  if (p.avatar === "rangerVermelho") {
+    desenharRangerVermelho({ ...p, y: p.y + deslocamentoMontaria });
+    return;
+  }
+
+  if (p.avatar === "harry") {
+    desenharHarryPotter({ ...p, y: p.y + deslocamentoMontaria });
+    return;
+  }
+
+  if (p.avatar === "ancelotti") {
+    desenharCarloAncelotti({ ...p, y: p.y + deslocamentoMontaria });
     return;
   }
 
@@ -2338,7 +2552,59 @@ function desenharBoneco(p) {
   desenharEtiqueta(nomeJogadorMontado(p), p.x + p.w / 2, baseY - 8);
 }
 
+function desenharRangerVermelho(p) {
+  ctx.save();
+  ctx.translate(p.direcao < 0 ? p.x + p.w : p.x, p.y);
+  if (p.direcao < 0) ctx.scale(-1, 1);
+  ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.fillRect(1, 56, 38, 5);
+  ctx.fillStyle = "#d90429"; ctx.fillRect(6, 3, 28, 22); ctx.fillRect(5, 26, 30, 26);
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(9, 9, 22, 7); ctx.fillRect(12, 29, 16, 5);
+  ctx.fillStyle = "#111111"; ctx.fillRect(11, 12, 18, 7);
+  ctx.fillStyle = "#f7c948"; ctx.fillRect(17, 35, 7, 7);
+  ctx.fillStyle = "#f7f3de"; ctx.fillRect(6, 50, 12, 9); ctx.fillRect(23, 50, 12, 9);
+  if (p.ataqueTempo > 0) {
+    ctx.fillStyle = "#d0d7de"; ctx.fillRect(34, 10, 6, 42);
+    ctx.fillStyle = "#ef233c"; ctx.fillRect(40, 2, 5, 32);
+  }
+  ctx.restore();
+  desenharEtiqueta(nomeJogadorMontado(p), p.x + p.w / 2, p.y - 10);
+}
+
+function desenharHarryPotter(p) {
+  ctx.save();
+  ctx.translate(p.direcao < 0 ? p.x + p.w : p.x, p.y);
+  if (p.direcao < 0) ctx.scale(-1, 1);
+  ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.fillRect(1, 56, 38, 5);
+  ctx.fillStyle = "#f1b48b"; ctx.fillRect(8, 5, 23, 20);
+  ctx.fillStyle = "#111111"; ctx.fillRect(5, 0, 29, 8); ctx.fillRect(5, 7, 7, 8);
+  ctx.strokeStyle = "#111111"; ctx.lineWidth = 2;
+  ctx.strokeRect(10, 11, 7, 7); ctx.strokeRect(22, 11, 7, 7); ctx.fillRect(17, 14, 5, 2);
+  ctx.fillStyle = "#5c2e12"; ctx.fillRect(5, 26, 30, 28);
+  ctx.fillStyle = "#f7c948"; ctx.fillRect(8, 28, 5, 25); ctx.fillRect(22, 28, 5, 25);
+  ctx.fillStyle = "#7f1d1d"; ctx.fillRect(13, 30, 9, 4);
+  ctx.fillStyle = "#111827"; ctx.fillRect(7, 52, 12, 8); ctx.fillRect(22, 52, 12, 8);
+  ctx.restore();
+  desenharEtiqueta(p.nuvem ? "Harry Potter + Vassoura" : nomeJogadorMontado(p), p.x + p.w / 2, p.y - 10);
+}
+
+function desenharCarloAncelotti(p) {
+  ctx.save();
+  ctx.translate(p.direcao < 0 ? p.x + p.w : p.x, p.y);
+  if (p.direcao < 0) ctx.scale(-1, 1);
+  ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.fillRect(1, 56, 38, 5);
+  ctx.fillStyle = "#f1b48b"; ctx.fillRect(8, 5, 24, 20);
+  ctx.fillStyle = "#d0d7de"; ctx.fillRect(5, 0, 29, 8); ctx.fillRect(5, 7, 7, 8);
+  ctx.fillStyle = "#111111"; ctx.fillRect(11, 12, 7, 3); ctx.fillRect(23, 10, 8, 4); ctx.fillRect(16, 20, 11, 2);
+  ctx.fillStyle = "#1d3557"; ctx.fillRect(5, 26, 30, 28);
+  ctx.fillStyle = "#f7f3de"; ctx.fillRect(15, 27, 10, 24);
+  ctx.fillStyle = "#111111"; ctx.fillRect(18, 29, 4, 20); ctx.fillRect(7, 52, 12, 8); ctx.fillRect(22, 52, 12, 8);
+  ctx.restore();
+  desenharEtiqueta(nomeJogadorMontado(p), p.x + p.w / 2, p.y - 10);
+}
+
 function desenharJogador2() {
+  desenharBoneco(jogador2);
+  return;
   const p = jogador2;
   if (p.invencivel > 0 && Math.floor(frame / 5) % 2 === 0) return;
   const deslocamentoMontaria = p.montado ? -30 : 0;
@@ -2611,10 +2877,41 @@ function desenharNuvemDouradaPixel(x, y) {
   ctx.fillRect(x + 30, y + 8, 20, 9);
 }
 
+function desenharVassouraPixel(x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = "#8b5a2b";
+  ctx.fillRect(4, 10, 54, 6);
+  ctx.fillStyle = "#d4a373";
+  ctx.fillRect(0, 5, 18, 16);
+  ctx.fillStyle = "#b7791f";
+  for (let i = 0; i < 5; i++) ctx.fillRect(-6 + i * 4, 2 + i % 2 * 4, 18, 3);
+  ctx.fillStyle = "#f7c948";
+  ctx.fillRect(36, 7, 7, 12);
+  ctx.restore();
+}
+
+function desenharVassouraMontada(jogador) {
+  ctx.save();
+  if (jogador.direcao < 0) {
+    ctx.translate(jogador.x + jogador.w, jogador.y);
+    ctx.scale(-1, 1);
+    desenharVassouraPixel(-10, jogador.h - 4);
+  } else {
+    desenharVassouraPixel(jogador.x - 10, jogador.y + jogador.h - 4);
+  }
+  ctx.restore();
+}
+
 function desenharNuvemGokuSolta(fase) {
-  if (joao.avatar !== "goku" || joao.nuvem) return;
+  if ((joao.avatar !== "goku" && joao.avatar !== "harry") || joao.nuvem) return;
   const nuvem = nuvemGokuDaFase(fase);
   const bob = Math.sin(frame / 12) * 2;
+  if (joao.avatar === "harry") {
+    desenharVassouraPixel(nuvem.x, nuvem.y + bob + 18);
+    desenharEtiqueta("Vassoura", nuvem.x + nuvem.w / 2, nuvem.y - 6);
+    return;
+  }
   desenharNuvemDouradaPixel(nuvem.x, nuvem.y + bob);
   desenharEtiqueta("Nuvem", nuvem.x + nuvem.w / 2, nuvem.y - 6);
 }
@@ -2822,6 +3119,11 @@ function desenharCogumelo(c) {
 function desenharVilao(i) {
   if (i.morto) return;
 
+  if (i.tipo === "mandibu") {
+    desenharMandibu(i);
+    return;
+  }
+
   if (i.tipo === "bossSupremo") {
     i.clones.forEach(clone => desenharBossSupremo(clone, true));
     desenharBossSupremo(i, false);
@@ -2879,6 +3181,51 @@ function desenharVilao(i) {
   }
 
   desenharSoldado(i);
+}
+
+function desenharMandibu(i) {
+  prepararVilao(i);
+  ctx.fillStyle = "rgba(0,0,0,.38)";
+  ctx.fillRect(4, 82, 74, 7);
+  ctx.fillStyle = "#2b2118";
+  ctx.fillRect(10, 18, 56, 62);
+  ctx.fillStyle = "#6c757d";
+  ctx.fillRect(5, 30, 68, 43);
+  ctx.fillStyle = "#ced4da";
+  ctx.fillRect(12, 34, 54, 7);
+  ctx.fillRect(17, 50, 44, 7);
+  ctx.fillStyle = "#7f1d1d";
+  ctx.fillRect(15, 5, 48, 19);
+  ctx.fillStyle = "#f7c948";
+  ctx.fillRect(20, 0, 8, 10);
+  ctx.fillRect(36, -5, 8, 15);
+  ctx.fillRect(53, 0, 8, 10);
+  ctx.fillStyle = "#ef476f";
+  ctx.fillRect(22, 24, 6, 6);
+  ctx.fillRect(50, 24, 6, 6);
+  ctx.fillStyle = "#d0d7de";
+  ctx.fillRect(68, 20, 7, 62);
+  ctx.fillStyle = "#f8f9fa";
+  ctx.fillRect(75, 8, 5, 34);
+  ctx.fillStyle = "#111827";
+  ctx.fillRect(15, 72, 17, 14);
+  ctx.fillRect(48, 72, 17, 14);
+  ctx.restore();
+
+  const protegido = mandibuProtegido(i);
+  const segundos = Math.max(0, Math.ceil((i.tempoMinimoDerrota - i.tempoAtivo) / 60));
+  ctx.fillStyle = "rgba(0,0,0,.75)";
+  ctx.fillRect(i.x - 8, i.y - 34, 96, 12);
+  ctx.fillStyle = protegido ? "#74c0fc" : "#ef476f";
+  ctx.fillRect(i.x - 6, i.y - 32, 92 * (protegido ? (i.tempoAtivo / i.tempoMinimoDerrota) : (i.vida / i.vidaMax)), 8);
+  desenharEtiqueta(protegido ? "Mandibu: escudo " + segundos + "s" : "Mandibu: VULNERAVEL", i.x + i.w / 2, i.y - 40);
+  if (protegido) {
+    ctx.strokeStyle = "rgba(116,192,252,.65)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(i.x + i.w / 2, i.y + i.h / 2, 54 + Math.sin(frame / 8) * 3, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 }
 
 function desenharChavesPixel(i) {
@@ -3516,6 +3863,7 @@ function desenharFase() {
 
   fase.plataformas.forEach(desenharPlataforma);
   desenharParedesLabirinto(fase);
+  desenharPerigosLabirinto(fase);
   desenharCampoMinado(fase);
   desenharDestrutiveis(fase);
   desenharTachas(fase);
@@ -3568,6 +3916,7 @@ function atualizarInimigos() {
 
   fase.inimigos.forEach((i, indice) => {
     if (i.morto) return;
+    if (i.tipo === "mandibu") i.tempoAtivo++;
     if (i.invencivel > 0) i.invencivel--;
 
     if (i.tipo === "bossSupremo") atualizarClonesBossSupremo(i);
@@ -3767,7 +4116,9 @@ function atualizarClonesBossSupremo(boss) {
 }
 
 function tentarDisparoVilao(vilao, indice) {
-  const intervalo = Math.max(60, 136 - faseAtual * 5);
+  const intervalo = MODO_HARD_GLOBAL
+    ? Math.max(54, 118 - faseAtual * 4)
+    : Math.max(60, 136 - faseAtual * 5);
   if ((frame + indice * 17) % intervalo !== 0) return;
 
   const centroVilaoX = vilao.x + vilao.w / 2;
@@ -4091,6 +4442,21 @@ function atualizarGolpeJogador(jogador = joao, teclasAtaque = ["x", "X"]) {
     return;
   }
 
+  if (jogador.avatar === "harry") {
+    dispararPomoDourado(jogador);
+    return;
+  }
+
+  if (jogador.avatar === "rangerVermelho") {
+    dispararPoderRangerVermelho(jogador);
+    return;
+  }
+
+  if (jogador.avatar === "ancelotti") {
+    dispararEndrickNoBanco(jogador);
+    return;
+  }
+
   jogador.comboGolpe = ((jogador.comboGolpe ?? -1) + 1) % 3;
   const golpes = [
     { nome: "SOCO", dano: 8, alcance: 52, cooldown: 17 },
@@ -4132,6 +4498,13 @@ function atualizarGolpeJogador(jogador = joao, teclasAtaque = ["x", "X"]) {
   const inimigo = fase.inimigos.find(alvo => !alvo.morto && colisao(alcance, alvo));
 
   if (inimigo) {
+    if (mandibuProtegido(inimigo)) {
+      jogador.ataqueCooldown = 18;
+      criarParticulas(inimigo.x + inimigo.w / 2, inimigo.y + 20, "#74c0fc", 20);
+      tocarSom("pisao");
+      mostrarAviso("A armadura do Mandibu ainda esta protegida!");
+      return;
+    }
     if (ehChefeVilao(inimigo)) {
       if (inimigo.invencivel <= 0) {
         inimigo.vida -= golpe.nome === "ESPECIAL" ? 2 : 1;
@@ -4208,6 +4581,47 @@ function dispararEsferaDragao(jogador) {
   mostrarAviso("Yoshi lancou uma esfera de " + estrelas + " estrelas!");
 }
 
+function dispararPomoDourado(jogador) {
+  jogador.ataqueTempo = 10;
+  jogador.ataqueCooldown = 26;
+  poderes.push({
+    dono: "harryPlayer", tipo: "pomoDourado", nome: "Pomo Dourado",
+    x: jogador.x + jogador.w / 2 + jogador.direcao * 24, y: jogador.y + 16,
+    w: 24, h: 18, vx: jogador.direcao * 9.8, vy: Math.sin(frame / 8) * 0.8,
+    cor: "#ffd43b", vida: 140, dano: 2
+  });
+  tocarSom("esfera");
+  mostrarAviso("Harry lancou o Pomo Dourado!");
+}
+
+function dispararPoderRangerVermelho(jogador) {
+  jogador.ataqueTempo = 14;
+  jogador.ataqueCooldown = 32;
+  jogador.invencivel = Math.max(jogador.invencivel, 20);
+  poderes.push({
+    dono: "rangerPlayer", tipo: "espadaRanger", nome: "Espada de Energia do Ranger Vermelho",
+    x: jogador.x + jogador.w / 2 + jogador.direcao * 28, y: jogador.y + 8,
+    w: 58, h: 40, vx: jogador.direcao * 10.2, vy: 0,
+    cor: "#ef233c", vida: 90, dano: 3
+  });
+  criarParticulas(jogador.x + jogador.w / 2, jogador.y + 26, "#ef233c", 30);
+  tocarSom("especial");
+  mostrarAviso("MORFAR! Ranger Vermelho: Espada de Energia!");
+}
+
+function dispararEndrickNoBanco(jogador) {
+  jogador.ataqueTempo = 12;
+  jogador.ataqueCooldown = 42;
+  poderes.push({
+    dono: "ancelottiPlayer", tipo: "endrickBanco", nome: "Endrick em cima do banco",
+    x: jogador.x + jogador.w / 2 + jogador.direcao * 22, y: jogador.y + 10,
+    w: 64, h: 46, vx: jogador.direcao * 7.6, vy: -0.4,
+    cor: "#51d88a", vida: 130, dano: 3
+  });
+  tocarSom("gol");
+  mostrarAviso("Ancelotti jogou o Endrick em cima do banco!");
+}
+
 function atualizarPoderes() {
   for (let p = poderes.length - 1; p >= 0; p--) {
     const poder = poderes[p];
@@ -4243,9 +4657,16 @@ function atualizarPoderes() {
       return;
     }
 
-    if (poder.dono === "neymar" || poder.dono === "goku" || poder.dono === "robloxPlayer" || poder.dono === "cr7" || poder.dono === "chavesPlayer" || poder.dono === "esqueletoPlayer" || poder.dono === "silvioPlayer" || poder.dono === "yoshiPlayer") {
+    if (poder.dono === "neymar" || poder.dono === "goku" || poder.dono === "robloxPlayer" || poder.dono === "cr7" || poder.dono === "chavesPlayer" || poder.dono === "esqueletoPlayer" || poder.dono === "silvioPlayer" || poder.dono === "yoshiPlayer" || poder.dono === "harryPlayer" || poder.dono === "rangerPlayer" || poder.dono === "ancelottiPlayer") {
       const alvo = fases[faseAtual].inimigos.find(i => !i.morto && colisao(i, poder));
       if (alvo) {
+        if (mandibuProtegido(alvo)) {
+          criarParticulas(poder.x, poder.y, "#74c0fc", 22);
+          tocarSom("pisao");
+          mostrarAviso("O escudo do Mandibu bloqueou o poder!");
+          poderes.splice(p, 1);
+          continue;
+        }
         const dano = poder.dano || (poder.dono === "goku" || poder.dono === "cr7" ? 2 : 1);
         if (ehChefeVilao(alvo)) {
           alvo.vida -= dano;
@@ -4282,6 +4703,56 @@ function atualizarPoderes() {
 
 function desenharPoderes() {
   poderes.forEach(poder => {
+    if (poder.tipo === "pomoDourado") {
+      ctx.fillStyle = "rgba(255,212,59,.28)";
+      ctx.beginPath(); ctx.arc(poder.x + 12, poder.y + 9, 15, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#ffd43b";
+      ctx.beginPath(); ctx.arc(poder.x + 12, poder.y + 9, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#f7f3de";
+      ctx.fillRect(poder.x - 5, poder.y + 3, 10, 4);
+      ctx.fillRect(poder.x + 19, poder.y + 3, 10, 4);
+      ctx.fillRect(poder.x - 2, poder.y, 5, 10);
+      ctx.fillRect(poder.x + 21, poder.y, 5, 10);
+      return;
+    }
+
+    if (poder.tipo === "espadaRanger") {
+      ctx.save();
+      ctx.globalAlpha = 0.82;
+      ctx.fillStyle = "#ef233c";
+      ctx.beginPath();
+      ctx.moveTo(poder.x, poder.y + poder.h / 2);
+      ctx.lineTo(poder.x + poder.w, poder.y);
+      ctx.lineTo(poder.x + poder.w - 12, poder.y + poder.h / 2);
+      ctx.lineTo(poder.x + poder.w, poder.y + poder.h);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+
+    if (poder.tipo === "endrickBanco") {
+      ctx.fillStyle = "#7f5539";
+      ctx.fillRect(poder.x, poder.y + 32, poder.w, 8);
+      ctx.fillRect(poder.x + 6, poder.y + 40, 7, 6);
+      ctx.fillRect(poder.x + poder.w - 13, poder.y + 40, 7, 6);
+      ctx.fillStyle = "#51d88a";
+      ctx.fillRect(poder.x + 24, poder.y + 14, 20, 20);
+      ctx.fillStyle = "#f1b48b";
+      ctx.fillRect(poder.x + 26, poder.y, 16, 14);
+      ctx.fillStyle = "#111111";
+      ctx.fillRect(poder.x + 24, poder.y - 3, 20, 5);
+      ctx.fillRect(poder.x + 26, poder.y + 30, 7, 6);
+      ctx.fillRect(poder.x + 39, poder.y + 30, 7, 6);
+      ctx.fillStyle = "#f7c948";
+      ctx.font = "bold 8px monospace";
+      ctx.fillText("ENDRICK", poder.x + 15, poder.y + 28);
+      return;
+    }
+
     if (poder.tipo === "esferaDragao") {
       ctx.save();
       const pulso = 1 + Math.sin(frame / 4) * 0.08;
@@ -4578,6 +5049,15 @@ function tratarColisaoVilao(jogador, vilao) {
 
   const ehChefe = ehChefeVilao(vilao);
 
+  if (mandibuProtegido(vilao)) {
+    jogador.velY = -9;
+    jogador.invencivel = 24;
+    criarParticulas(vilao.x + vilao.w / 2, vilao.y + 18, "#74c0fc", 24);
+    tocarSom("pisao");
+    mostrarAviso("Mandibu ainda tem armadura: sobreviva ate 60 segundos!");
+    return;
+  }
+
   if (ehChefe && veioDeCima && vilao.invencivel <= 0) {
     vilao.vida--;
     vilao.invencivel = 42;
@@ -4793,18 +5273,18 @@ function coletarAliadosEspeciais() {
 
 function montarNuvemGoku() {
   const fase = fases[faseAtual];
-  if (joao.avatar !== "goku" || joao.nuvem || joao.montado) return;
+  if ((joao.avatar !== "goku" && joao.avatar !== "harry") || joao.nuvem || joao.montado) return;
 
   const nuvem = nuvemGokuDaFase(fase);
   const box = { x: nuvem.x, y: nuvem.y, w: nuvem.w, h: nuvem.h };
 
   if (colisao(joao, box)) {
     joao.nuvem = true;
-    joao.superSayajin = true;
+    joao.superSayajin = joao.avatar === "goku";
     joao.invencivel = Math.max(joao.invencivel, 120);
     tocarSom("vitoria");
     criarParticulas(nuvem.x + nuvem.w / 2, nuvem.y + 16, "#ffd43b", 44);
-    mostrarAviso("Goku subiu na nuvem e virou Super Sayajin!");
+    mostrarAviso(joao.avatar === "harry" ? "Harry Potter subiu na vassoura e agora pode voar!" : "Goku subiu na nuvem e virou Super Sayajin!");
   }
 }
 
@@ -5105,6 +5585,7 @@ function reiniciarJogo() {
         i.clones = [];
         i.ultimoClone = null;
       }
+      if (i.tipo === "mandibu") i.tempoAtivo = 0;
       if (i.tipo === "chaves") {
         i.ataqueChaves = 0;
         i.cooldownAtaqueChaves = 0;
@@ -5121,6 +5602,10 @@ function reiniciarJogo() {
       fase.mufasa.salvo = false;
       fase.mufasa.montadoPor = null;
     }
+    (fase.pacmans || []).forEach(pac => {
+      if (pac.baseX !== undefined) pac.x = pac.baseX;
+      if (pac.baseY !== undefined) pac.y = pac.baseY;
+    });
   });
 
   resetarPersonagens();
