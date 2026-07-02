@@ -4658,7 +4658,38 @@ function atualizarPoderes() {
     }
 
     if (poder.dono === "neymar" || poder.dono === "goku" || poder.dono === "robloxPlayer" || poder.dono === "cr7" || poder.dono === "chavesPlayer" || poder.dono === "esqueletoPlayer" || poder.dono === "silvioPlayer" || poder.dono === "yoshiPlayer" || poder.dono === "harryPlayer" || poder.dono === "rangerPlayer" || poder.dono === "ancelottiPlayer") {
-      const alvo = fases[faseAtual].inimigos.find(i => !i.morto && colisao(i, poder));
+      const faseAtualObj = fases[faseAtual];
+      const objeto = (faseAtualObj.destrutiveis || []).find(item => !item.quebrado && colisao(item, poder));
+      if (objeto) {
+        const danoObjeto = Math.max(1, poder.dano || 1);
+        objeto.vida -= danoObjeto;
+        criarParticulas(poder.x + poder.w / 2, poder.y + poder.h / 2, poder.cor || "#ffd43b", 26);
+        tocarSom("pisao");
+        tremor = objeto.tipo === "carroQuebravel" ? 14 : 8;
+
+        if (objeto.vida <= 0) {
+          objeto.quebrado = true;
+          const premioMoedas = objeto.tipo === "carroQuebravel" ? 10 : 3;
+          moedas += premioMoedas;
+          moedasLoja += premioMoedas;
+          pontosDestruicao += objeto.tipo === "carroQuebravel" ? 1000 : 250;
+          ganharExperiencia(objeto.tipo === "carroQuebravel" ? 35 : 15);
+          if (objeto.tipo === "carroQuebravel") {
+            diamantes++;
+            const bonusSegundos = Math.min(25, 12 + faseAtual * 2);
+            faseAtualObj.bonusTempoChefe = bonusSegundos;
+            if (chefeTimerAtivo && chefeTimer !== null) chefeTimer += bonusSegundos * 60;
+          }
+          salvarCarteira();
+          mostrarAviso((poder.nome || "Poder") + " destruiu " + (objeto.tipo === "carroQuebravel" ? "o carro!" : "o barril!"));
+        } else {
+          mostrarAviso((poder.nome || "Poder") + " acertou " + (objeto.tipo === "carroQuebravel" ? "o carro" : "o barril") + "! Resistencia: " + objeto.vida + "/" + objeto.vidaMax);
+        }
+        poderes.splice(p, 1);
+        continue;
+      }
+
+      const alvo = faseAtualObj.inimigos.find(i => !i.morto && colisao(i, poder));
       if (alvo) {
         if (mandibuProtegido(alvo)) {
           criarParticulas(poder.x, poder.y, "#74c0fc", 22);
