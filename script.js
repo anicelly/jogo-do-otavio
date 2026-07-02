@@ -33,10 +33,18 @@ let nivelRpg = 1;
 let experienciaRpg = 0;
 let hitStopFrames = 0;
 let flashImpacto = 0;
+let modoVersus = false;
+let vidaVersusP1 = 100;
+let vidaVersusP2 = 100;
+let cameraImpacto = 0;
+let recordeFase = 0;
 let carteira = carregarCarteira();
 let moedasLoja = carteira.moedas;
 let diamantes = carteira.diamantes;
 let inventarioLoja = carteira.inventario;
+nivelRpg = carteira.progresso.nivel;
+experienciaRpg = carteira.progresso.experiencia;
+recordeFase = carteira.progresso.recordeFase;
 let yoshis = 0;
 let venceu = false;
 let gameOver = false;
@@ -99,9 +107,16 @@ const partyMode = document.getElementById("partyMode");
 const levelLabel = document.getElementById("levelLabel");
 const xpLabel = document.getElementById("xpLabel");
 const xpFill = document.getElementById("xpFill");
+const botaoVersus = document.getElementById("botaoVersus");
+const fighterName = document.getElementById("fighterName");
+const fighterPower = document.getElementById("fighterPower");
+const fighterStrength = document.getElementById("fighterStrength");
+const fighterSpeed = document.getElementById("fighterSpeed");
+const fighterSpecial = document.getElementById("fighterSpecial");
+const fighterAvatar = document.getElementById("fighterAvatar");
 
 function carregarCarteira() {
-  const padrao = { moedas: 0, diamantes: 0, inventario: { vidas: 0, segundosExtras: 0 } };
+  const padrao = { moedas: 0, diamantes: 0, inventario: { vidas: 0, segundosExtras: 0 }, progresso: { nivel: 1, experiencia: 0, recordeFase: 0 } };
   try {
     const salva = JSON.parse(localStorage.getItem("reinoPixelCarteira") || "null");
     if (!salva) return padrao;
@@ -111,6 +126,11 @@ function carregarCarteira() {
       inventario: {
         vidas: Number.isFinite(salva.inventario?.vidas) ? Math.max(0, salva.inventario.vidas) : 0,
         segundosExtras: Number.isFinite(salva.inventario?.segundosExtras) ? Math.max(0, salva.inventario.segundosExtras) : 0
+      },
+      progresso: {
+        nivel: Number.isFinite(salva.progresso?.nivel) ? Math.max(1, salva.progresso.nivel) : 1,
+        experiencia: Number.isFinite(salva.progresso?.experiencia) ? Math.max(0, salva.progresso.experiencia) : 0,
+        recordeFase: Number.isFinite(salva.progresso?.recordeFase) ? Math.max(0, salva.progresso.recordeFase) : 0
       }
     };
   } catch {
@@ -120,7 +140,7 @@ function carregarCarteira() {
 
 function salvarCarteira() {
   try {
-    localStorage.setItem("reinoPixelCarteira", JSON.stringify({ moedas: moedasLoja, diamantes, inventario: inventarioLoja }));
+    localStorage.setItem("reinoPixelCarteira", JSON.stringify({ moedas: moedasLoja, diamantes, inventario: inventarioLoja, progresso: { nivel: nivelRpg, experiencia: experienciaRpg, recordeFase } }));
   } catch {
     // O jogo continua normalmente quando o navegador bloqueia armazenamento local.
   }
@@ -190,12 +210,17 @@ function ganharExperiencia(quantidade) {
     mostrarAviso("SUBIU PARA O NÍVEL " + nivelRpg + "! +10 moedas!");
     tocarSom("vitoria");
   }
+  salvarCarteira();
 }
 
 function atualizarPainelMissao() {
   if (!missionObjective || frame % 10 !== 0) return;
   const fase = fases[faseAtual];
-  if (fase.bonus) {
+  if (modoVersus) {
+    missionObjective.textContent = "Duelo local: reduza a vida rival a zero";
+    missionHint.textContent = "Ataques alternam SOCO → CHUTE → ESPECIAL";
+    missionProgress.textContent = vidaVersusP1 + " HP × " + vidaVersusP2 + " HP";
+  } else if (fase.bonus) {
     const total = fase.destrutiveis.length;
     const destruidos = fase.destrutiveis.filter(objeto => objeto.quebrado).length;
     missionObjective.textContent = "Destrua o carro e o barril";
@@ -220,11 +245,32 @@ function atualizarPainelMissao() {
 }
 
 function alternarMultiplayer() {
+  if (modoVersus) {
+    multiplayerAtivo = true;
+    mostrarAviso("O modo VERSUS exige dois jogadores.");
+    return;
+  }
   multiplayerAtivo = !multiplayerAtivo;
   botaoMultiplayer.textContent = "2 jogadores: " + (multiplayerAtivo ? "sim" : "não");
   botaoMultiplayer.classList.toggle("is-active", multiplayerAtivo);
   resetarPersonagens();
   mostrarAviso(multiplayerAtivo ? "COOP ATIVO: se um cair, os dois perdem!" : "Modo para um jogador ativo.");
+}
+
+function alternarModoVersus() {
+  modoVersus = !modoVersus;
+  multiplayerAtivo = modoVersus || multiplayerAtivo;
+  botaoVersus.textContent = "Modo: " + (modoVersus ? "VERSUS" : "campanha");
+  botaoVersus.classList.toggle("is-active", modoVersus);
+  botaoMultiplayer.textContent = "2 jogadores: " + (multiplayerAtivo ? "sim" : "não");
+  botaoMultiplayer.classList.toggle("is-active", multiplayerAtivo);
+  vidaVersusP1 = 100;
+  vidaVersusP2 = 100;
+  gameOver = false;
+  venceu = false;
+  jogoIniciado = true;
+  resetarPersonagens();
+  mostrarAviso(modoVersus ? "VERSUS! P1 contra P2!" : "Campanha restaurada.");
 }
 
 function detectarDispositivo() {
@@ -346,6 +392,30 @@ const personagensDisponiveis = {
   silvioSantos: { nome: "Silvio Santos", camisa: "#1d3557", calca: "#111827", cabelo: "#d0d7de", avatar: "silvioSantos", numero: "" }
 };
 
+const perfisLutadores = {
+  joao: ["Lutador equilibrado · combo corpo a corpo", 7, 7, 6], luquinhas: ["Ágil e resistente", 6, 8, 6],
+  cr7: ["Bicicletas, Buffon e SIUUU", 9, 8, 9], yoshi: ["Mobilidade e salto", 6, 9, 7],
+  messi: ["Drible e bola de ouro", 8, 9, 9], lobo: ["Força selvagem", 9, 7, 6],
+  miaw: ["Energia elétrica", 7, 9, 8], neymar: ["Muleta, fogo e Bruna", 8, 9, 9],
+  goku: ["Voo e Genki Dama", 10, 8, 10], meninoRoblox: ["Celular e placa", 7, 8, 8],
+  chaves: ["Barril, sanduíche e tamarindo", 8, 6, 9], esqueleto: ["Cortes duplos", 9, 7, 8],
+  silvioSantos: ["Jequiti e microfone", 7, 7, 10]
+};
+
+function atualizarFichaLutador(id) {
+  const escolhido = personagensDisponiveis[id];
+  const perfil = perfisLutadores[id] || perfisLutadores.joao;
+  if (fighterName) fighterName.textContent = escolhido.nome;
+  if (fighterPower) fighterPower.textContent = perfil[0];
+  if (fighterStrength) fighterStrength.textContent = perfil[1];
+  if (fighterSpeed) fighterSpeed.textContent = perfil[2];
+  if (fighterSpecial) fighterSpecial.textContent = perfil[3];
+  if (fighterAvatar) {
+    fighterAvatar.textContent = escolhido.numero || escolhido.nome.slice(0, 2).toUpperCase();
+    fighterAvatar.style.background = "linear-gradient(145deg," + escolhido.camisa + "," + escolhido.calca + ")";
+  }
+}
+
 function selecionarPersonagem2(id) {
   const idValido = personagensDisponiveis[id] ? id : "luquinhas";
   const escolhido = personagensDisponiveis[idValido];
@@ -403,6 +473,7 @@ function selecionarPersonagem(id) {
   proximoPoderSilvio = "jequiti";
   sincronizarMusicaGoku(true);
   sincronizarMusicaNeymar(true);
+  atualizarFichaLutador(idValido);
 
   if (activePlayerLabel) {
     activePlayerLabel.innerText = "Personagem: " + escolhido.nome;
@@ -1172,6 +1243,7 @@ function resetarTimerChefe() {
 }
 
 function atualizarTimerChefe() {
+  if (modoVersus) return;
   const chefesVivos = chefesVivosDaFase();
 
   if (chefesVivos.length === 0) {
@@ -1221,6 +1293,7 @@ function atualizarTimerChefe() {
 }
 
 function atualizarTimerFaseBonus() {
+  if (modoVersus) return;
   const fase = fases[faseAtual];
   if (!fase.bonus || faseBonusConcluida) return;
   const restantes = fase.destrutiveis.filter(objeto => !objeto.quebrado);
@@ -1351,6 +1424,9 @@ function tocarSom(nome) {
       tocarTom(220, 0.08, "square", 0.055);
       tocarTom(440, 0.12, "triangle", 0.045, 0.06);
     },
+    soco: () => { tocarTom(185, .07, "square", .065); tocarTom(110, .08, "triangle", .05, .03); },
+    chute: () => { tocarTom(145, .1, "sawtooth", .07); tocarTom(290, .09, "square", .045, .04); },
+    especial: () => { [110,220,440,880].forEach((nota,i) => tocarTom(nota,.13,"sawtooth",.055,i*.035)); },
     portal: () => {
       tocarTom(392, 0.1, "sine", 0.045);
       tocarTom(523, 0.1, "sine", 0.045, 0.08);
@@ -1470,7 +1546,7 @@ function resetarPersonagens() {
   poderSilvioCooldown = 0;
   proximoPoderSilvio = "jequiti";
 
-  joao.x = fase?.bonus ? 842 : 52;
+  joao.x = modoVersus ? 280 : fase?.bonus ? 842 : 52;
   joao.y = 422;
   joao.velX = 0;
   joao.velY = 0;
@@ -1486,19 +1562,21 @@ function resetarPersonagens() {
   joao.agachado = false;
   joao.ataqueTempo = 0;
   joao.ataqueCooldown = 0;
-  joao.direcao = fase?.bonus ? -1 : 1;
+  joao.direcao = modoVersus ? 1 : fase?.bonus ? -1 : 1;
+  joao.comboGolpe = -1;
   joao.h = joao.alturaNormal;
 
-  jogador2.x = fase?.bonus ? 800 : 102;
+  jogador2.x = modoVersus ? 646 : fase?.bonus ? 800 : 102;
   jogador2.y = 422;
   jogador2.velX = 0;
   jogador2.velY = 0;
   jogador2.invencivel = 80;
-  jogador2.direcao = fase?.bonus ? -1 : 1;
+  jogador2.direcao = -1;
   jogador2.noChao = false;
   jogador2.agachado = false;
   jogador2.ataqueTempo = 0;
   jogador2.ataqueCooldown = 0;
+  jogador2.comboGolpe = -1;
   jogador2.montado = false;
   jogador2.montaria = null;
   jogador2.superMario = false;
@@ -1760,6 +1838,32 @@ function desenharParedesLabirinto(fase) {
     ctx.strokeStyle = "#c77dff";
     ctx.strokeRect(parede.x, parede.y, parede.w, parede.h);
   });
+}
+
+function desenharAmbienteVivo(fase) {
+  ctx.save();
+  if (fase.tema === "auditorio" || fase.tema === "estadio") {
+    for (let i = 0; i < 7; i++) {
+      const x = (i * 151 + frame * (i % 2 ? .35 : -.25)) % 1040 - 40;
+      ctx.fillStyle = i % 2 ? "rgba(255,212,59,.2)" : "rgba(116,192,252,.18)";
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 55, 310); ctx.lineTo(x + 105, 310); ctx.closePath(); ctx.fill();
+    }
+  } else if (fase.tema === "floresta" || fase.tema === "floresta-noite") {
+    for (let i = 0; i < 18; i++) {
+      const x = (i * 67 + frame * .45) % 1000 - 20;
+      const y = 80 + ((i * 91 + frame * .7) % 330);
+      ctx.fillStyle = i % 3 ? "rgba(81,216,138,.45)" : "rgba(247,201,72,.38)";
+      ctx.fillRect(x, y, 5, 3);
+    }
+  } else {
+    for (let i = 0; i < 12; i++) {
+      const x = (i * 83 + frame * .18) % 980;
+      const y = 120 + (i * 47 % 300) + Math.sin(frame / 20 + i) * 8;
+      ctx.fillStyle = "rgba(255,255,255,.13)";
+      ctx.fillRect(x, y, 3, 3);
+    }
+  }
+  ctx.restore();
 }
 
 function desenharProgramaAuditorio() {
@@ -2159,7 +2263,7 @@ function desenharBoneco(p) {
     return;
   }
 
-  const baseY = p.montado ? p.y - 18 : p.y;
+  const baseY = (p.montado ? p.y - 18 : p.y) + (!p.andando && p.noChao ? Math.sin(frame / 10) * 1.5 : 0);
   const escala = (p.grande ? 1.18 : 1) * ESCALA_VISUAL_PLAYER;
   const offsetX = p.grande ? -3 : 0;
   const offsetY = p.grande ? -10 : 0;
@@ -2293,14 +2397,21 @@ function desenharSuperMario(p, deslocamentoMontaria = 0) {
 function desenharEfeitoGolpe(p, deslocamentoMontaria) {
   const frenteX = p.direcao > 0 ? p.x + p.w : p.x - 42;
   const y = p.y + deslocamentoMontaria + 17;
-  ctx.fillStyle = "rgba(255,212,59,0.32)";
+  const especial = p.tipoGolpeAtual === "ESPECIAL";
+  const chute = p.tipoGolpeAtual === "CHUTE";
+  ctx.fillStyle = especial ? "rgba(239,71,111,.4)" : chute ? "rgba(0,174,239,.34)" : "rgba(255,212,59,0.32)";
   ctx.fillRect(frenteX, y - 8, 42, 34);
-  ctx.strokeStyle = "#ffd43b";
-  ctx.lineWidth = 4;
+  ctx.strokeStyle = especial ? "#ef476f" : chute ? "#00aeef" : "#ffd43b";
+  ctx.lineWidth = especial ? 7 : 4;
   ctx.beginPath();
   ctx.moveTo(frenteX + (p.direcao > 0 ? 0 : 42), y + 18);
   ctx.lineTo(frenteX + (p.direcao > 0 ? 34 : 8), y);
   ctx.stroke();
+  if (especial) {
+    ctx.beginPath();
+    ctx.arc(frenteX + 21, y + 8, 24, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 }
 
 function desenharBuffonGuardiao(p) {
@@ -3292,6 +3403,27 @@ function desenharMeteoros() {
 }
 
 function desenharHUD(fase) {
+  if (modoVersus) {
+    ctx.fillStyle = "rgba(8,10,16,.88)";
+    ctx.fillRect(18, 16, 924, 82);
+    ctx.fillStyle = "#f7f3de";
+    ctx.font = "bold 17px monospace";
+    ctx.fillText("P1 " + joao.nome, 32, 40);
+    ctx.textAlign = "right";
+    ctx.fillText(jogador2.nome + " P2", 928, 40);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#2b2d42";
+    ctx.fillRect(32, 53, 360, 23); ctx.fillRect(568, 53, 360, 23);
+    ctx.fillStyle = vidaVersusP1 <= 25 ? "#ef476f" : "#51d88a";
+    ctx.fillRect(35, 56, 354 * (vidaVersusP1 / 100), 17);
+    ctx.fillStyle = vidaVersusP2 <= 25 ? "#ef476f" : "#74c0fc";
+    const larguraP2 = 354 * (vidaVersusP2 / 100);
+    ctx.fillRect(925 - larguraP2, 56, larguraP2, 17);
+    ctx.fillStyle = "#ffd43b";
+    ctx.font = "bold 28px monospace";
+    ctx.fillText("VS", 462, 69);
+    return;
+  }
   const mortos = fase.inimigos.filter(i => i.morto).length;
   const total = fase.inimigos.length;
 
@@ -3370,6 +3502,7 @@ function desenharHUD(fase) {
 function desenharFase() {
   const fase = fases[faseAtual];
   desenharFundo(fase);
+  desenharAmbienteVivo(fase);
 
   fase.plataformas.forEach(desenharPlataforma);
   desenharParedesLabirinto(fase);
@@ -3447,8 +3580,16 @@ function atualizarInimigos() {
       return;
     }
 
+    const enfurecido = ehChefeVilao(i) && i.vida <= i.vidaMax / 2;
+    if (enfurecido && !i.enfurecido) {
+      i.enfurecido = true;
+      mostrarAviso((i.nome || "CHEFE") + " ENTROU NA FASE 2!");
+      flashImpacto = 8;
+      tremor = 20;
+    }
+
     const ajusteVilao = i.tipo === "messi" ? AJUSTE_MESSI_JOGAVEL : i.tipo === "meninoRoblox" ? 1.35 : 1;
-    i.x += i.vel * multiplicador * AJUSTE_VELOCIDADE_JOGAVEL * ajusteVilao;
+    i.x += i.vel * multiplicador * AJUSTE_VELOCIDADE_JOGAVEL * ajusteVilao * (enfurecido ? 1.35 : 1);
 
     if (i.x <= i.min || i.x >= i.max) {
       i.vel *= -1;
@@ -3462,7 +3603,13 @@ function atualizarInimigos() {
 }
 
 function atualizarPoderSilvioBoss(silvio) {
-  silvio.x += silvio.vel * dificuldadeFinal() * AJUSTE_VELOCIDADE_JOGAVEL;
+  const enfurecido = silvio.vida <= silvio.vidaMax / 2;
+  if (enfurecido && !silvio.enfurecido) {
+    silvio.enfurecido = true;
+    mostrarAviso("SILVIO ENTROU NA FASE 2: RITMO ACELERADO!");
+    tremor = 20;
+  }
+  silvio.x += silvio.vel * dificuldadeFinal() * AJUSTE_VELOCIDADE_JOGAVEL * (enfurecido ? 1.35 : 1);
   if (silvio.x <= silvio.min || silvio.x >= silvio.max) silvio.vel *= -1;
   silvio.direcao = joao.x + joao.w / 2 >= silvio.x + silvio.w / 2 ? 1 : -1;
   if (silvio.cooldownPoder > 0) silvio.cooldownPoder--;
@@ -3483,7 +3630,7 @@ function atualizarPoderSilvioBoss(silvio) {
     vida: 130
   });
   silvio.proximoPoder = microfone ? "jequiti" : "microfoneSilvio";
-  silvio.cooldownPoder = 90;
+  silvio.cooldownPoder = enfurecido ? 55 : 90;
   mostrarAviso(microfone ? "Silvio lançou o microfone!" : "Silvio lançou Jequiti!");
   tocarSom("gol");
 }
@@ -3929,20 +4076,50 @@ function atualizarGolpeJogador(jogador = joao, teclasAtaque = ["x", "X"]) {
   else comboDestruicao = 0;
   if (!jogoIniciado || pausado || gameOver || venceu || jogador.ataqueCooldown > 0 || !teclaAtiva(teclasAtaque)) return;
 
+  jogador.comboGolpe = ((jogador.comboGolpe ?? -1) + 1) % 3;
+  const golpes = [
+    { nome: "SOCO", dano: 8, alcance: 52, cooldown: 17 },
+    { nome: "CHUTE", dano: 11, alcance: 64, cooldown: 21 },
+    { nome: "ESPECIAL", dano: 16, alcance: 76, cooldown: 29 }
+  ];
+  const golpe = golpes[jogador.comboGolpe];
+  jogador.tipoGolpeAtual = golpe.nome;
   jogador.ataqueTempo = 12;
-  jogador.ataqueCooldown = fase.bonus ? 8 : 22;
+  jogador.ataqueCooldown = fase.bonus && !modoVersus ? 8 : golpe.cooldown;
   const alcance = {
-    x: jogador.direcao > 0 ? jogador.x + jogador.w - 2 : jogador.x - 54,
+    x: jogador.direcao > 0 ? jogador.x + jogador.w - 2 : jogador.x - golpe.alcance,
     y: jogador.y + 8,
-    w: 56,
+    w: golpe.alcance,
     h: 46
   };
+
+  if (modoVersus) {
+    const rival = jogador === joao ? jogador2 : joao;
+    if (rival.invencivel <= 0 && colisao(alcance, rival)) {
+      if (jogador === joao) vidaVersusP2 = Math.max(0, vidaVersusP2 - golpe.dano);
+      else vidaVersusP1 = Math.max(0, vidaVersusP1 - golpe.dano);
+      rival.invencivel = 24;
+      rival.velX = jogador.direcao * (3 + golpe.dano * .2);
+      hitStopFrames = golpe.nome === "ESPECIAL" ? 6 : 3;
+      flashImpacto = golpe.nome === "ESPECIAL" ? 10 : 5;
+      tremor = golpe.nome === "ESPECIAL" ? 22 : 10;
+      cameraImpacto = golpe.nome === "ESPECIAL" ? 10 : 5;
+      criarParticulas(rival.x + rival.w / 2, rival.y + 24, golpe.nome === "ESPECIAL" ? "#ef476f" : "#ffd43b", 32);
+      tocarSom(golpe.nome === "ESPECIAL" ? "especial" : golpe.nome === "CHUTE" ? "chute" : "soco");
+      mostrarAviso(golpe.nome + "! " + (jogador === joao ? "P2" : "P1") + " perdeu " + golpe.dano + " de vida!");
+      if (vidaVersusP1 <= 0 || vidaVersusP2 <= 0) {
+        gameOver = true;
+        mensagem.innerText = "K.O.! " + (vidaVersusP1 > 0 ? joao.nome : jogador2.nome) + " venceu!";
+      }
+    }
+    return;
+  }
   const inimigo = fase.inimigos.find(alvo => !alvo.morto && colisao(alcance, alvo));
 
   if (inimigo) {
     if (ehChefeVilao(inimigo)) {
       if (inimigo.invencivel <= 0) {
-        inimigo.vida--;
+        inimigo.vida -= golpe.nome === "ESPECIAL" ? 2 : 1;
         inimigo.invencivel = 24;
         if (inimigo.vida <= 0) inimigo.morto = true;
       }
@@ -3955,6 +4132,7 @@ function atualizarGolpeJogador(jogador = joao, teclasAtaque = ["x", "X"]) {
     tremor = 12;
     hitStopFrames = inimigo.morto ? 5 : 3;
     flashImpacto = inimigo.morto ? 9 : 5;
+    cameraImpacto = inimigo.morto ? 9 : 4;
     registrarComboCombate();
     ganharExperiencia(inimigo.morto ? 20 : 5);
   }
@@ -3964,6 +4142,7 @@ function atualizarGolpeJogador(jogador = joao, teclasAtaque = ["x", "X"]) {
     objeto.vida--;
     hitStopFrames = objeto.vida <= 1 ? 5 : 2;
     flashImpacto = objeto.vida <= 1 ? 8 : 4;
+    cameraImpacto = objeto.vida <= 1 ? 8 : 3;
     comboDestruicao = comboDestruicaoTempo > 0 ? comboDestruicao + 1 : 1;
     comboDestruicaoTempo = 120;
     pontosDestruicao += 50 * comboDestruicao;
@@ -4678,6 +4857,8 @@ function verificarPortal() {
     }
     mostrarAviso("Troféu conquistado: " + fase.campeonato.nome + "!" + textoBonus);
     ganharExperiencia(30 + faseAtual * 5);
+    recordeFase = Math.max(recordeFase, faseAtual + 1);
+    salvarCarteira();
 
     faseAtual++;
 
@@ -4719,6 +4900,14 @@ function telaVitoria() {
 function telaGameOver() {
   desenharFundo(fases[faseAtual]);
   fases[faseAtual].plataformas.forEach(desenharPlataforma);
+  if (modoVersus) {
+    desenharPainelCentral("K.O.", [
+      (vidaVersusP1 > 0 ? joao.nome : jogador2.nome) + " venceu o duelo!",
+      "Clique em Reiniciar para a revanche",
+      "Alterne o botão VERSUS para voltar à campanha"
+    ], "#ffd43b");
+    return;
+  }
   desenharPainelCentral("GAME OVER", [
     "Os chefões não foram derrotados no tempo disponível",
     "Pressione ENTER ou clique em Reiniciar",
@@ -4799,10 +4988,10 @@ function reiniciarJogo() {
   comboDestruicaoTempo = 0;
   comboCombate = 0;
   comboCombateTempo = 0;
-  nivelRpg = 1;
-  experienciaRpg = 0;
   faseBonusTimer = 480;
   faseBonusConcluida = false;
+  vidaVersusP1 = 100;
+  vidaVersusP2 = 100;
   yoshis = 0;
   venceu = false;
   gameOver = false;
@@ -4843,6 +5032,7 @@ function reiniciarJogo() {
     if (fase.miaw) fase.miaw.salvo = false;
     fase.inimigos.forEach(i => {
       i.morto = false;
+      i.enfurecido = false;
       if (ehChefeVilao(i)) {
         i.vida = i.vidaMax;
         i.invencivel = 0;
@@ -4928,10 +5118,11 @@ function loop() {
   }
   atualizarGolpeJogador(joao, controlesP1.ataque);
   if (multiplayerAtivo) atualizarGolpeJogador(jogador2, ["Enter"]);
-  tocarArmadilhasOcultas(joao);
-  if (multiplayerAtivo) tocarArmadilhasOcultas(jogador2);
+  if (!modoVersus) {
+    tocarArmadilhasOcultas(joao);
+    if (multiplayerAtivo) tocarArmadilhasOcultas(jogador2);
 
-  atualizarPoderNeymar();
+    atualizarPoderNeymar();
   atualizarPoderGoku();
   atualizarPoderRoblox();
   atualizarPoderCR7();
@@ -4967,7 +5158,8 @@ function loop() {
   montarMufasa();
   coletarAliadosEspeciais();
   montarNuvemGoku();
-  verificarPortal();
+    verificarPortal();
+  }
   if (venceu) {
     requestAnimationFrame(loop);
     return;
@@ -4975,6 +5167,13 @@ function loop() {
   atualizarParticulas();
 
   ctx.save();
+  if (cameraImpacto > 0) {
+    const zoom = 1 + cameraImpacto * .006;
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-canvas.width / 2, -canvas.height / 2);
+    cameraImpacto--;
+  }
   if (tremor > 0) {
     tremor--;
     ctx.translate((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8);

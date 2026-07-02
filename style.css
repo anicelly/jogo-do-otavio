@@ -193,6 +193,15 @@ canvas {
 .picker-heading strong { color: #fff; font-size: 1.05rem; }
 .picker-count { color: var(--gold); font-size: .78rem; font-weight: 900; }
 
+.fighter-profile { display: grid; grid-template-columns: auto minmax(220px, 1fr) auto; align-items: center; gap: 14px; padding: 14px; border: 1px solid #4a4d68; border-radius: 9px; background: linear-gradient(100deg, rgba(239,71,111,.12), rgba(0,174,239,.1)); }
+.fighter-avatar { display: grid; width: 58px; height: 58px; place-items: center; clip-path: polygon(12% 0,100% 0,88% 100%,0 100%); background: linear-gradient(145deg,#ef476f,#7b2cbf); color: #fff; font-size: 1.2rem; font-weight: 950; }
+.fighter-profile strong { color: #fff; font-size: 1.15rem; }
+.fighter-profile p { margin: 3px 0 0; color: var(--muted); }
+.fighter-stats { display: flex; gap: 8px; }
+.fighter-stats span { display: grid; gap: 2px; min-width: 72px; padding: 7px; background: #10121b; color: #8188a4; font-size: .62rem; font-weight: 900; text-align: center; }
+.fighter-stats b { color: var(--gold); font-size: 1rem; }
+#botaoVersus.is-active { background: linear-gradient(180deg,#ff8787,#e03131); color: #fff; box-shadow: 0 5px 0 #7c1010; }
+
 .status {
   display: flex;
   align-items: center;
@@ -406,6 +415,8 @@ body.device-desktop .touch-pad {
 }
 
 @media (max-width: 720px) {
+  .fighter-profile { grid-template-columns: auto 1fr; }
+  .fighter-stats { grid-column: 1 / -1; }
   .party-panel { grid-template-columns: 1fr 1fr; }
   .xp-panel { grid-column: 1 / -1; }
   .mission-panel { grid-template-columns: 1fr 1fr; }
