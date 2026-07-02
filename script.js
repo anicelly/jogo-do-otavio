@@ -31,6 +31,8 @@ let comboCombate = 0;
 let comboCombateTempo = 0;
 let nivelRpg = 1;
 let experienciaRpg = 0;
+let hitStopFrames = 0;
+let flashImpacto = 0;
 let carteira = carregarCarteira();
 let moedasLoja = carteira.moedas;
 let diamantes = carteira.diamantes;
@@ -57,7 +59,7 @@ const AJUSTE_VELOCIDADE_JOGAVEL = 0.78;
 const AJUSTE_MESSI_JOGAVEL = 0.65;
 const AJUSTE_METEORO_JOGAVEL = 0.62;
 const AJUSTE_PODER_VILAO_JOGAVEL = 0.7;
-const ESCALA_VISUAL_PLAYER = 1.14;
+const ESCALA_VISUAL_PLAYER = 1.28;
 const ALTURA_MINIMA_VOO_GOKU = 96;
 const ENERGIA_MAXIMA_VOO_GOKU = 300;
 let chefeTimer = null;
@@ -820,6 +822,31 @@ fases.unshift({
   inimigos: []
 });
 
+fases.push({
+  nome: "Fase Especial - Labirinto das Moedas",
+  fundo: ["#151b32", "#070a13"],
+  tema: "labirinto",
+  labirinto: true,
+  plataformas: [{ x: 0, y: 486, w: 960, h: 54, tipo: "castelo" }],
+  paredesLabirinto: [
+    { x: 150, y: 370, w: 34, h: 116 }, { x: 286, y: 348, w: 34, h: 138 },
+    { x: 422, y: 390, w: 34, h: 96 }, { x: 558, y: 352, w: 34, h: 134 },
+    { x: 694, y: 376, w: 34, h: 110 }, { x: 812, y: 350, w: 34, h: 136 }
+  ],
+  portal: { x: 886, y: 426, w: 58, h: 60 },
+  yoshi: { x: -200, y: 432, salvo: false },
+  moedas: [
+    { x: 110, y: 442, coletada: false }, { x: 210, y: 442, coletada: false },
+    { x: 250, y: 330, coletada: false }, { x: 350, y: 442, coletada: false },
+    { x: 390, y: 320, coletada: false }, { x: 490, y: 442, coletada: false },
+    { x: 530, y: 320, coletada: false }, { x: 625, y: 442, coletada: false },
+    { x: 665, y: 300, coletada: false }, { x: 760, y: 442, coletada: false },
+    { x: 790, y: 315, coletada: false }, { x: 870, y: 380, coletada: false }
+  ],
+  cogumelos: [],
+  inimigos: []
+});
+
 const campeonatos = [
   { nome: "Copa do Rei", cor: "#f7c948" },
   { nome: "La Liga", cor: "#ff6b6b" },
@@ -854,10 +881,14 @@ fases.forEach((fase, indice) => {
   fase.bonusTempoChefe = 0;
   const campeonato = fase.bonus
     ? { nome: "Desafio de Demolição", cor: "#ff922b" }
-    : campeonatos[indice - 1];
+    : fase.labirinto
+      ? { nome: "Coroa do Labirinto", cor: "#c77dff" }
+      : campeonatos[indice - 1];
   fase.campeonato = campeonato;
   fase.nome = fase.bonus
     ? "Fase 1 - Bônus: Destrua o Carro"
+    : fase.labirinto
+      ? "Fase " + (indice + 1) + " - Labirinto das Moedas"
     : indice === 1
       ? "Fase 2 - Programa de Auditório: Silvio Santos"
       : "Fase " + (indice + 1) + " - " + campeonato.nome;
@@ -939,6 +970,15 @@ fases.forEach((fase, indice) => {
       { tipo: "barrilQuebravel", x: 730, y: 418, w: 58, h: 68, vida: 6, vidaMax: 6, quebrado: false },
       { tipo: "carroQuebravel", x: 310, y: 388, w: 340, h: 98, vida: 12, vidaMax: 12, quebrado: false }
     ];
+  } else if (fase.labirinto) {
+    fase.armadilhas = [];
+    fase.destrutiveis = [];
+    fase.mufasa = null;
+  } else if (fase.labirinto) {
+    const coletadas = fase.moedas.filter(moeda => moeda.coletada).length;
+    missionObjective.textContent = multiplayerAtivo ? "Coletem moedas sem se trombar" : "Atravesse o labirinto e colete as moedas";
+    missionHint.textContent = multiplayerAtivo ? "Se P1 e P2 encostarem, a dupla perde" : "Salte sobre as paredes e alcance a saída";
+    missionProgress.textContent = coletadas + "/" + fase.moedas.length + " moedas";
   } else {
     fase.inimigos.forEach(inimigo => {
       inimigo.vel *= 1.1;
@@ -1517,6 +1557,7 @@ function atualizarPlataformasMoveis() {
 }
 
 function moverPersonagem(p, esquerda, direita, pulo, baixo = ["s", "ArrowDown"]) {
+  p.prevX = p.x;
   p.prevY = p.y;
   p.velX = 0;
   p.andando = false;
@@ -1603,6 +1644,21 @@ function moverPersonagem(p, esquerda, direita, pulo, baixo = ["s", "ArrowDown"])
   }
 }
 
+function atualizarDesafioLabirinto() {
+  const fase = fases[faseAtual];
+  if (!fase.labirinto) return;
+  jogadoresAtivos().forEach(jogador => {
+    const parede = fase.paredesLabirinto.find(item => colisao(jogador, item));
+    if (parede) {
+      jogador.x = jogador.prevX;
+      jogador.velX = 0;
+    }
+  });
+  if (multiplayerAtivo && joao.invencivel <= 0 && jogador2.invencivel <= 0 && colisao(joao, jogador2)) {
+    derrotarJogadores("Os jogadores se trombaram no labirinto!");
+  }
+}
+
 function desenharFundo(fase) {
   const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
   grad.addColorStop(0, fase.fundo[0]);
@@ -1678,6 +1734,32 @@ function desenharFundo(fase) {
     ctx.font = "bold 16px monospace";
     ctx.fillText("8 SEGUNDOS • CARRO + BARRIL", 368, 150);
   }
+
+  if (fase.tema === "labirinto") {
+    ctx.fillStyle = "#0b1022";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "rgba(199,125,255,.08)";
+    for (let y = 40; y < 480; y += 48) {
+      for (let x = (y / 48) % 2 * 24; x < 960; x += 48) ctx.fillRect(x, y, 26, 22);
+    }
+    ctx.fillStyle = "#c77dff";
+    ctx.font = "bold 24px monospace";
+    ctx.fillText("LABIRINTO DAS MOEDAS", 338, 146);
+    ctx.fillStyle = "#f7f3de";
+    ctx.font = "15px monospace";
+    ctx.fillText("NO COOP, NÃO ENCOSTE NO OUTRO JOGADOR", 298, 176);
+  }
+}
+
+function desenharParedesLabirinto(fase) {
+  (fase.paredesLabirinto || []).forEach((parede, indice) => {
+    ctx.fillStyle = indice % 2 === 0 ? "#4c2a85" : "#31558f";
+    ctx.fillRect(parede.x, parede.y, parede.w, parede.h);
+    ctx.fillStyle = "rgba(255,255,255,.16)";
+    for (let y = parede.y + 8; y < parede.y + parede.h; y += 22) ctx.fillRect(parede.x + 5, y, parede.w - 10, 5);
+    ctx.strokeStyle = "#c77dff";
+    ctx.strokeRect(parede.x, parede.y, parede.w, parede.h);
+  });
 }
 
 function desenharProgramaAuditorio() {
@@ -3290,6 +3372,7 @@ function desenharFase() {
   desenharFundo(fase);
 
   fase.plataformas.forEach(desenharPlataforma);
+  desenharParedesLabirinto(fase);
   desenharCampoMinado(fase);
   desenharDestrutiveis(fase);
   desenharTachas(fase);
@@ -3314,6 +3397,26 @@ function desenharFase() {
   fase.inimigos.forEach(desenharVilao);
   desenharMeteoros();
   desenharPoderes();
+}
+
+function desenharAcabamentoArcade() {
+  ctx.save();
+  ctx.fillStyle = "rgba(4,6,12,.035)";
+  for (let y = 0; y < canvas.height; y += 4) ctx.fillRect(0, y, canvas.width, 2);
+  const vinheta = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 170, canvas.width / 2, canvas.height / 2, 590);
+  vinheta.addColorStop(0, "rgba(0,0,0,0)");
+  vinheta.addColorStop(1, "rgba(0,0,0,.38)");
+  ctx.fillStyle = vinheta;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = "rgba(255,255,255,.28)";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(7, 7, canvas.width - 14, canvas.height - 14);
+  if (flashImpacto > 0) {
+    ctx.fillStyle = "rgba(255,255,255," + Math.min(.3, flashImpacto * .035) + ")";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    flashImpacto--;
+  }
+  ctx.restore();
 }
 
 function atualizarInimigos() {
@@ -3550,6 +3653,8 @@ function tentarDisparoVilao(vilao, indice) {
 }
 
 function lancarPlacaInjusticaGlobal() {
+  const fase = fases[faseAtual];
+  if (fase.bonus || fase.labirinto) return;
   const intervalo = faseAtual < 5 ? 360 : 480;
   if (frame % intervalo !== 0) return;
 
@@ -3848,6 +3953,8 @@ function atualizarGolpeJogador(jogador = joao, teclasAtaque = ["x", "X"]) {
     mostrarAviso(inimigo.morto ? (inimigo.nome || "Vilão") + " foi nocauteado!" : "Golpe acertou! Vida: " + inimigo.vida + "/" + inimigo.vidaMax);
     tocarSom(inimigo.morto ? "vitoria" : "pisao");
     tremor = 12;
+    hitStopFrames = inimigo.morto ? 5 : 3;
+    flashImpacto = inimigo.morto ? 9 : 5;
     registrarComboCombate();
     ganharExperiencia(inimigo.morto ? 20 : 5);
   }
@@ -3855,6 +3962,8 @@ function atualizarGolpeJogador(jogador = joao, teclasAtaque = ["x", "X"]) {
   const objeto = (fase.destrutiveis || []).find(item => !item.quebrado && colisao(alcance, item));
   if (objeto) {
     objeto.vida--;
+    hitStopFrames = objeto.vida <= 1 ? 5 : 2;
+    flashImpacto = objeto.vida <= 1 ? 8 : 4;
     comboDestruicao = comboDestruicaoTempo > 0 ? comboDestruicao + 1 : 1;
     comboDestruicaoTempo = 120;
     pontosDestruicao += 50 * comboDestruicao;
@@ -4306,14 +4415,16 @@ function coletarMoedas() {
   fase.moedas.forEach(m => {
     const moedaBox = { x: m.x - 12, y: m.y - 12, w: 24, h: 24 };
 
-    if (!m.coletada && colisao(joao, moedaBox)) {
+    const coletor = jogadoresAtivos().find(jogador => colisao(jogador, moedaBox));
+    if (!m.coletada && coletor) {
       m.coletada = true;
       moedas++;
       moedasLoja++;
       salvarCarteira();
       tocarSom("moeda");
       criarParticulas(m.x, m.y, "#ffd43b", 12);
-      if (personagemAtual === "neymar") {
+      ganharExperiencia(2);
+      if (coletor === joao && personagemAtual === "neymar") {
         mostrarAviso("PARABÉNS, VC TRAIU MAIS UMA ESPOSA");
       }
     }
@@ -4539,6 +4650,13 @@ function verificarPortal() {
       }
       if (fases[faseAtual + 1]) {
         fases[faseAtual + 1].bonusTempoChefe += fase.bonusTempoChefe;
+      }
+    }
+    if (fase.labirinto) {
+      const restantes = fase.moedas.filter(moeda => !moeda.coletada).length;
+      if (restantes > 0) {
+        mostrarAviso("Ainda faltam " + restantes + " moedas no labirinto!");
+        return;
       }
     }
     const chefeVivo = fase.inimigos.some(i => ehChefeVilao(i) && !i.morto);
@@ -4791,12 +4909,23 @@ function loop() {
     return;
   }
 
+  if (hitStopFrames > 0) {
+    hitStopFrames--;
+    requestAnimationFrame(loop);
+    return;
+  }
+
   atualizarPlataformasMoveis();
   const controlesP1 = multiplayerAtivo
     ? { esquerda: ["a"], direita: ["d"], pulo: ["w"], baixo: ["s"], ataque: ["x", "X"] }
     : { esquerda: ["a", "ArrowLeft"], direita: ["d", "ArrowRight"], pulo: ["w", "ArrowUp"], baixo: ["s", "ArrowDown"], ataque: ["x", "X"] };
   moverPersonagem(joao, controlesP1.esquerda, controlesP1.direita, controlesP1.pulo, controlesP1.baixo);
   if (multiplayerAtivo) moverPersonagem(jogador2, ["ArrowLeft"], ["ArrowRight"], ["ArrowUp"], ["ArrowDown"]);
+  atualizarDesafioLabirinto();
+  if (gameOver) {
+    requestAnimationFrame(loop);
+    return;
+  }
   atualizarGolpeJogador(joao, controlesP1.ataque);
   if (multiplayerAtivo) atualizarGolpeJogador(jogador2, ["Enter"]);
   tocarArmadilhasOcultas(joao);
@@ -4856,6 +4985,7 @@ function loop() {
   desenharParticulas();
   desenharHUD(fases[faseAtual]);
   desenharBannerFase();
+  desenharAcabamentoArcade();
   ctx.restore();
 
   requestAnimationFrame(loop);

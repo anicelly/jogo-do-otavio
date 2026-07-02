@@ -1,9 +1,9 @@
 :root {
   color-scheme: dark;
   --bg: #101318;
-  --panel: #191f2a;
-  --panel-2: #222b38;
-  --line: #384354;
+  --panel: #171824;
+  --panel-2: #26283a;
+  --line: #4a4d68;
   --text: #f7f3de;
   --muted: #b6c1d2;
   --gold: #f7c948;
@@ -21,9 +21,9 @@ body {
   display: grid;
   place-items: center;
   background:
-    radial-gradient(circle at 15% 15%, rgba(81, 216, 138, 0.16), transparent 28%),
-    radial-gradient(circle at 85% 20%, rgba(247, 201, 72, 0.13), transparent 26%),
-    linear-gradient(135deg, #0d1015 0%, #151923 52%, #0f1218 100%);
+    radial-gradient(circle at 12% 18%, rgba(0,174,239,.2), transparent 27%),
+    radial-gradient(circle at 88% 14%, rgba(239,71,111,.2), transparent 28%),
+    linear-gradient(135deg, #080910 0%, #151725 52%, #07080e 100%);
   color: var(--text);
   font-family: "Segoe UI", system-ui, sans-serif;
   overscroll-behavior: none;
@@ -63,7 +63,10 @@ h1 {
   color: var(--text);
   font-size: clamp(2rem, 5vw, 4.4rem);
   line-height: 0.95;
-  text-shadow: 0 5px 0 #05070a, 0 0 28px rgba(247, 201, 72, 0.18);
+  font-style: italic;
+  letter-spacing: -.04em;
+  text-transform: uppercase;
+  text-shadow: 4px 5px 0 #05070a, -2px -2px 0 #ef476f, 2px 2px 0 #00aeef, 0 0 30px rgba(247,201,72,.22);
 }
 
 h2, h3, p { margin-top: 0; }
@@ -113,9 +116,9 @@ h2, h3, p { margin-top: 0; }
 
 .stage {
   padding: 14px;
-  border: 1px solid var(--line);
+  border: 2px solid #555a78;
   border-radius: 14px;
-  background: linear-gradient(180deg, rgba(34, 43, 56, 0.95), rgba(18, 22, 30, 0.95));
+  background: linear-gradient(180deg, rgba(39,42,62,.97), rgba(11,12,20,.98));
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
 }
 
@@ -123,11 +126,11 @@ canvas {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
-  border: 4px solid #edf2f4;
+  border: 5px solid #e9ecef;
   border-radius: 6px;
   background: #6bb7ff;
   image-rendering: pixelated;
-  box-shadow: inset 0 0 0 4px #18202b;
+  box-shadow: inset 0 0 0 4px #111522, 0 0 0 2px #ef476f, 0 18px 45px rgba(0,0,0,.5);
   touch-action: none;
 }
 
@@ -240,7 +243,8 @@ button {
   min-height: 42px;
   padding: 0 18px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 4px;
+  clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
   background: linear-gradient(180deg, #ffe082, #f7b731);
   color: #1d1a10;
   font-family: inherit;
@@ -301,6 +305,8 @@ body.device-desktop .touch-pad {
 .player-choice.is-selected {
   background: linear-gradient(180deg, #ffe082, #f7b731);
   color: #1d1a10;
+  outline: 2px solid #ffffff;
+  filter: saturate(1.25) contrast(1.08);
 }
 
 .touch-pad {
