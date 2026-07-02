@@ -80,6 +80,7 @@ let genkiDamaCooldown = 0;
 let poderRobloxCooldown = 0;
 let proximoPoderRoblox = "celular";
 let poderCR7Cooldown = 0;
+let poderHarryCooldown = 0;
 let buffonTempo = 0;
 let proximoPoderCR7 = "bicicletaCR7";
 let poderChavesCooldown = 0;
@@ -400,9 +401,9 @@ const personagensDisponiveis = {
 };
 
 const perfisLutadores = {
-  joao: ["Lutador equilibrado · combo corpo a corpo", 7, 7, 6], luquinhas: ["Ágil e resistente", 6, 8, 6],
-  cr7: ["Bicicletas, Buffon e SIUUU", 9, 8, 9], yoshi: ["Mobilidade e salto", 6, 9, 7],
-  messi: ["Drible e bola de ouro", 8, 9, 9], harry: ["Pomo dourado e voo na vassoura", 7, 9, 10],
+  joao: ["Impacto do Reino e força equilibrada", 8, 7, 9], luquinhas: ["Raio Azul Supremo e alta velocidade", 7, 9, 9],
+  cr7: ["Bicicletas, Buffon e SIUUU", 9, 8, 9], yoshi: ["Chama verde, esferas e salto", 8, 9, 9],
+  messi: ["Drible e Bola de Ouro explosiva", 9, 9, 10], harry: ["Pomo, Expelliarmus, Patrono e vassoura", 8, 9, 10],
   rangerVermelho: ["Espada de energia vermelha", 9, 8, 9], ancelotti: ["Lança Endrick em cima do banco", 8, 6, 10], neymar: ["Muleta, fogo e Bruna", 8, 9, 9],
   goku: ["Voo e Genki Dama", 10, 8, 10], meninoRoblox: ["Celular e placa", 7, 8, 8],
   chaves: ["Barril, sanduíche e tamarindo", 8, 6, 9], esqueleto: ["Cortes duplos", 9, 7, 8],
@@ -428,6 +429,7 @@ function selecionarPersonagem2(id) {
   const escolhido = personagensDisponiveis[idValido];
   personagem2Atual = idValido;
   jogador2.nome = "P2 " + escolhido.nome;
+  jogador2.personagemId = idValido;
   jogador2.corCamisa = escolhido.camisa;
   jogador2.corCalca = escolhido.calca;
   jogador2.cabelo = escolhido.cabelo;
@@ -453,6 +455,7 @@ function selecionarPersonagem(id) {
   musicaTimer = 0;
   notaMusica = 0;
   joao.nome = escolhido.nome;
+  joao.personagemId = idValido;
   joao.corCamisa = escolhido.camisa;
   joao.corCalca = escolhido.calca;
   joao.cabelo = escolhido.cabelo;
@@ -468,6 +471,7 @@ function selecionarPersonagem(id) {
   joao.superMario = false;
   poderNeymarCooldown = 0;
   proximoPoderNeymar = "muletaPower";
+  poderHarryCooldown = 0;
   poderChavesCooldown = 0;
   poderChavesSucoCooldown = 90;
   proximoPoderChaves = "sanduichePresunto";
@@ -938,20 +942,31 @@ const fases = [
 ];
 
 fases.unshift({
-  nome: "Fase Bônus - Destrua o Carro",
-  fundo: ["#243b55", "#101820"],
-  tema: "garagemBonus",
-  bonus: true,
+  nome: "Fase 1 - Fortaleza Sombria",
+  fundo: ["#30364a", "#10131b"],
+  tema: "castelo",
   plataformas: [
     { x: 0, y: 486, w: 960, h: 54, tipo: "castelo" },
-    { x: 72, y: 390, w: 150, h: 22, tipo: "castelo" },
-    { x: 738, y: 390, w: 150, h: 22, tipo: "castelo" }
+    { x: 104, y: 400, w: 132, h: 22, tipo: "castelo" },
+    { x: 302, y: 338, w: 126, h: 22, tipo: "castelo" },
+    { x: 502, y: 280, w: 126, h: 22, tipo: "castelo" },
+    { x: 696, y: 344, w: 126, h: 22, tipo: "castelo" },
+    { x: 826, y: 260, w: 104, h: 22, tipo: "castelo" }
   ],
-  portal: { x: 872, y: 426, w: 58, h: 60 },
-  yoshi: { x: 92, y: 346, salvo: false },
-  moedas: [],
-  cogumelos: [],
-  inimigos: []
+  portal: { x: 850, y: 200, w: 58, h: 60 },
+  yoshi: { x: 124, y: 344, salvo: false },
+  moedas: [
+    { x: 158, y: 358, coletada: false }, { x: 350, y: 296, coletada: false },
+    { x: 550, y: 238, coletada: false }, { x: 746, y: 302, coletada: false },
+    { x: 870, y: 218, coletada: false }
+  ],
+  cogumelos: [{ x: 386, y: 306, coletado: false }],
+  inimigos: [
+    criarVilao("soldado", 252, 444, 3.2, 214, 386),
+    criarVilao("esqueleto", 442, 428, 2.8, 408, 570),
+    criarVilao("cavaleiro", 632, 436, 3.8, 590, 784),
+    criarVilao("soldado", 738, 302, 3.1, 700, 806)
+  ]
 });
 
 fases.push({
@@ -1033,7 +1048,9 @@ fases.forEach((fase, indice) => {
     ? { nome: "Desafio de Demolição", cor: "#ff922b" }
     : fase.labirinto
       ? { nome: "Coroa do Labirinto", cor: "#c77dff" }
-      : campeonatos[indice - 1];
+      : indice === 0
+        ? { nome: "Fortaleza Sombria", cor: "#adb5bd" }
+        : campeonatos[indice - 1];
   fase.campeonato = campeonato;
   fase.nome = fase.bonus
     ? "Fase 1 - Bônus: Destrua o Carro"
@@ -1124,11 +1141,6 @@ fases.forEach((fase, indice) => {
     fase.armadilhas = [];
     fase.destrutiveis = [];
     fase.mufasa = null;
-  } else if (fase.labirinto) {
-    const coletadas = fase.moedas.filter(moeda => moeda.coletada).length;
-    missionObjective.textContent = multiplayerAtivo ? "Coletem moedas sem se trombar" : "Atravesse o labirinto e colete as moedas";
-    missionHint.textContent = multiplayerAtivo ? "Se P1 e P2 encostarem, a dupla perde" : "Salte sobre as paredes e alcance a saída";
-    missionProgress.textContent = coletadas + "/" + fase.moedas.length + " moedas";
   } else {
     fase.inimigos.forEach(inimigo => {
       inimigo.vel *= 1.1;
@@ -1654,6 +1666,7 @@ function resetarPersonagens() {
   poderRobloxCooldown = 0;
   proximoPoderRoblox = "celular";
   poderCR7Cooldown = 0;
+  poderHarryCooldown = 0;
   buffonTempo = 0;
   proximoPoderCR7 = "bicicletaCR7";
   poderChavesCooldown = 0;
@@ -4443,7 +4456,7 @@ function atualizarGolpeJogador(jogador = joao, teclasAtaque = ["x", "X"]) {
   }
 
   if (jogador.avatar === "harry") {
-    dispararPomoDourado(jogador);
+    dispararPoderHarry(jogador);
     return;
   }
 
@@ -4454,6 +4467,11 @@ function atualizarGolpeJogador(jogador = joao, teclasAtaque = ["x", "X"]) {
 
   if (jogador.avatar === "ancelotti") {
     dispararEndrickNoBanco(jogador);
+    return;
+  }
+
+  if (["joao", "luquinhas", "yoshi", "messi"].includes(jogador.personagemId)) {
+    dispararPoderHeroiBase(jogador);
     return;
   }
 
@@ -4594,6 +4612,47 @@ function dispararPomoDourado(jogador) {
   mostrarAviso("Harry lancou o Pomo Dourado!");
 }
 
+function dispararExpelliarmus(jogador) {
+  jogador.ataqueTempo = 12;
+  jogador.ataqueCooldown = 24;
+  poderes.push({
+    dono: "harryPlayer", tipo: "expelliarmus", nome: "Expelliarmus",
+    x: jogador.x + jogador.w / 2 + jogador.direcao * 24, y: jogador.y + 18,
+    w: 48, h: 14, vx: jogador.direcao * 10.6, vy: 0,
+    cor: "#ef476f", vida: 115, dano: 2
+  });
+  tocarSom("especial");
+  mostrarAviso("Harry lancou Expelliarmus!");
+}
+
+function dispararPatrono(jogador) {
+  jogador.ataqueTempo = 14;
+  jogador.ataqueCooldown = 34;
+  poderes.push({
+    dono: "harryPlayer", tipo: "patrono", nome: "Expecto Patronum",
+    x: jogador.x + jogador.w / 2 + jogador.direcao * 26, y: jogador.y + 6,
+    w: 54, h: 38, vx: jogador.direcao * 8.5, vy: -0.15,
+    cor: "#74c0fc", vida: 145, dano: 3
+  });
+  tocarSom("portal");
+  mostrarAviso("Harry invocou o Patrono!");
+}
+
+function dispararPoderHarry(jogador = joao) {
+  if (poderHarryCooldown > 0 || gameOver || venceu) return;
+  const sorteio = Math.floor(Math.random() * 3);
+  if (sorteio === 0) dispararPomoDourado(jogador);
+  else if (sorteio === 1) dispararExpelliarmus(jogador);
+  else dispararPatrono(jogador);
+  poderHarryCooldown = 85 + Math.floor(Math.random() * 55);
+}
+
+function atualizarPoderHarry() {
+  if (poderHarryCooldown > 0) poderHarryCooldown--;
+  if (personagemAtual !== "harry" || !jogoIniciado || pausado || gameOver || venceu) return;
+  if (poderHarryCooldown <= 0) dispararPoderHarry(joao);
+}
+
 function dispararPoderRangerVermelho(jogador) {
   jogador.ataqueTempo = 14;
   jogador.ataqueCooldown = 32;
@@ -4620,6 +4679,30 @@ function dispararEndrickNoBanco(jogador) {
   });
   tocarSom("gol");
   mostrarAviso("Ancelotti jogou o Endrick em cima do banco!");
+}
+
+function dispararPoderHeroiBase(jogador) {
+  const configuracoes = {
+    joao: { tipo: "impactoReino", nome: "Impacto do Reino", cor: "#ef476f", w: 64, h: 42, velocidade: 9.2, dano: 3 },
+    luquinhas: { tipo: "raioAzul", nome: "Raio Azul Supremo", cor: "#4dabf7", w: 58, h: 24, velocidade: 10.4, dano: 3 },
+    yoshi: { tipo: "chamaYoshi", nome: "Chama Verde do Yoshi", cor: "#51d88a", w: 46, h: 34, velocidade: 9.8, dano: 3 },
+    messi: { tipo: "bolaOuroPlayer", nome: "Bola de Ouro do Messi", cor: "#ffd43b", w: 34, h: 34, velocidade: 10.2, dano: 4 }
+  };
+  const config = configuracoes[jogador.personagemId] || configuracoes.joao;
+  jogador.ataqueTempo = 13;
+  jogador.ataqueCooldown = 30;
+  poderes.push({
+    dono: "heroiPlayer", tipo: config.tipo, nome: config.nome,
+    x: jogador.x + jogador.w / 2 + jogador.direcao * 24,
+    y: jogador.y + 12,
+    w: config.w, h: config.h,
+    vx: jogador.direcao * config.velocidade, vy: 0,
+    cor: config.cor, vida: 120, dano: config.dano
+  });
+  jogador.invencivel = Math.max(jogador.invencivel, 16);
+  criarParticulas(jogador.x + jogador.w / 2, jogador.y + 24, config.cor, 24);
+  tocarSom("especial");
+  mostrarAviso(jogador.nome + " usou " + config.nome + "!");
 }
 
 function atualizarPoderes() {
@@ -4657,7 +4740,7 @@ function atualizarPoderes() {
       return;
     }
 
-    if (poder.dono === "neymar" || poder.dono === "goku" || poder.dono === "robloxPlayer" || poder.dono === "cr7" || poder.dono === "chavesPlayer" || poder.dono === "esqueletoPlayer" || poder.dono === "silvioPlayer" || poder.dono === "yoshiPlayer" || poder.dono === "harryPlayer" || poder.dono === "rangerPlayer" || poder.dono === "ancelottiPlayer") {
+    if (poder.dono === "neymar" || poder.dono === "goku" || poder.dono === "robloxPlayer" || poder.dono === "cr7" || poder.dono === "chavesPlayer" || poder.dono === "esqueletoPlayer" || poder.dono === "silvioPlayer" || poder.dono === "yoshiPlayer" || poder.dono === "harryPlayer" || poder.dono === "rangerPlayer" || poder.dono === "ancelottiPlayer" || poder.dono === "heroiPlayer") {
       const faseAtualObj = fases[faseAtual];
       const objeto = (faseAtualObj.destrutiveis || []).find(item => !item.quebrado && colisao(item, poder));
       if (objeto) {
@@ -4734,6 +4817,76 @@ function atualizarPoderes() {
 
 function desenharPoderes() {
   poderes.forEach(poder => {
+    if (poder.tipo === "impactoReino") {
+      ctx.save(); ctx.globalAlpha = .82;
+      ctx.fillStyle = "rgba(239,71,111,.28)";
+      ctx.beginPath(); ctx.arc(poder.x + 24, poder.y + 21, 30, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#ef476f"; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(poder.x + 24, poder.y + 21, 18, -.8, .8); ctx.stroke();
+      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+      return;
+    }
+
+    if (poder.tipo === "raioAzul") {
+      ctx.fillStyle = "rgba(77,171,247,.3)"; ctx.fillRect(poder.x - 8, poder.y - 7, poder.w + 16, poder.h + 14);
+      ctx.fillStyle = "#4dabf7";
+      ctx.beginPath(); ctx.moveTo(poder.x, poder.y + 8); ctx.lineTo(poder.x + 22, poder.y);
+      ctx.lineTo(poder.x + 16, poder.y + 10); ctx.lineTo(poder.x + poder.w, poder.y + 14);
+      ctx.lineTo(poder.x + 28, poder.y + poder.h); ctx.closePath(); ctx.fill();
+      return;
+    }
+
+    if (poder.tipo === "chamaYoshi") {
+      ctx.fillStyle = "rgba(81,216,138,.25)";
+      ctx.beginPath(); ctx.arc(poder.x + 20, poder.y + 17, 24, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#51d88a";
+      ctx.beginPath(); ctx.moveTo(poder.x, poder.y + 17); ctx.lineTo(poder.x + 20, poder.y);
+      ctx.lineTo(poder.x + poder.w, poder.y + 17); ctx.lineTo(poder.x + 20, poder.y + poder.h); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#f7c948"; ctx.fillRect(poder.x + 20, poder.y + 11, 14, 12);
+      return;
+    }
+
+    if (poder.tipo === "bolaOuroPlayer") {
+      ctx.fillStyle = "rgba(255,212,59,.28)";
+      ctx.beginPath(); ctx.arc(poder.x + 17, poder.y + 17, 23, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#ffd43b";
+      ctx.beginPath(); ctx.arc(poder.x + 17, poder.y + 17, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#fff3bf"; ctx.lineWidth = 3; ctx.stroke();
+      ctx.fillStyle = "#7f5539"; ctx.fillRect(poder.x + 13, poder.y + 13, 8, 8);
+      return;
+    }
+
+    if (poder.tipo === "expelliarmus") {
+      ctx.save();
+      ctx.globalAlpha = 0.88;
+      ctx.fillStyle = "rgba(239,71,111,.3)";
+      ctx.fillRect(poder.x - 8, poder.y - 6, poder.w + 16, poder.h + 12);
+      ctx.fillStyle = "#ef476f";
+      ctx.fillRect(poder.x, poder.y + 4, poder.w, 6);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(poder.x + 8, poder.y + 6, poder.w - 18, 2);
+      ctx.restore();
+      return;
+    }
+
+    if (poder.tipo === "patrono") {
+      ctx.save();
+      ctx.globalAlpha = 0.78;
+      ctx.fillStyle = "rgba(116,192,252,.3)";
+      ctx.fillRect(poder.x - 8, poder.y - 8, poder.w + 16, poder.h + 16);
+      ctx.fillStyle = "#74c0fc";
+      ctx.fillRect(poder.x + 10, poder.y + 10, 34, 20);
+      ctx.fillRect(poder.x + 36, poder.y + 3, 14, 16);
+      ctx.fillRect(poder.x + 40, poder.y - 4, 4, 10);
+      ctx.fillRect(poder.x + 47, poder.y - 4, 4, 10);
+      ctx.fillRect(poder.x + 12, poder.y + 28, 6, 10);
+      ctx.fillRect(poder.x + 34, poder.y + 28, 6, 10);
+      ctx.fillStyle = "#f7f3de";
+      ctx.fillRect(poder.x + 43, poder.y + 9, 3, 3);
+      ctx.restore();
+      return;
+    }
+
     if (poder.tipo === "pomoDourado") {
       ctx.fillStyle = "rgba(255,212,59,.28)";
       ctx.beginPath(); ctx.arc(poder.x + 12, poder.y + 9, 15, 0, Math.PI * 2); ctx.fill();
@@ -5706,6 +5859,7 @@ function loop() {
   atualizarPoderGoku();
   atualizarPoderRoblox();
   atualizarPoderCR7();
+  atualizarPoderHarry();
   atualizarPoderChaves();
   atualizarPoderEsqueleto();
   atualizarPoderSilvio();
