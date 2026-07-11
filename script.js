@@ -410,13 +410,184 @@ function drawPlayer(p) {
   const h = currentHero();
   const blink = p.inv > 0 && state.frame % 6 < 3;
   if (blink) return;
-  ctx.fillStyle = h.color;
-  ctx.fillRect(p.x, p.y + (p.crouch ? 15 : 0), p.w, p.h - (p.crouch ? 15 : 0));
-  ctx.fillStyle = "#fff4d6";
-  ctx.fillRect(p.x + 6, p.y + 8 + (p.crouch ? 15 : 0), 6, 6);
-  ctx.fillRect(p.x + 17, p.y + 8 + (p.crouch ? 15 : 0), 6, 6);
+  const walk = Math.floor(state.frame / 8) % 2;
+  const crouch = p.crouch ? 10 : 0;
+  const cx = p.x + p.w / 2;
+  const base = p.y + p.h;
+
+  if (h.id === "yoshi") {
+    drawYoshiSprite(cx - 34, base - 58 + crouch, p.facing);
+  } else {
+    drawHumanSprite(cx, base + crouch, p.facing, h, walk, p.crouch);
+  }
+
+  if (p.powerCd > 0) {
+    ctx.strokeStyle = h.color;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(p.x - 6, p.y - 6 + crouch, p.w + 12, p.h + 12 - crouch);
+  }
+}
+
+function drawHumanSprite(cx, base, facing, hero, walk, crouch) {
+  const skin = hero.id === "esqueleto" ? "#f1f1df" : "#f0b58f";
+  const hair = {
+    ryu: "#1b1b1b",
+    ken: "#ffd166",
+    may: "#5c2e12",
+    cr7: "#24130c",
+    messi: "#5c2e12",
+    harry: "#111111",
+    ancelotti: "#d0d7de",
+    neymar: "#f7c948",
+    goku: "#111111",
+    chaves: "#5c3b1e",
+    silvioSantos: "#d0d7de"
+  }[hero.id] || "#2a160f";
+  const pants = {
+    ryu: "#f7f3de",
+    ken: "#d90429",
+    may: "#2f6f9f",
+    cr7: "#d90429",
+    messi: "#ffffff",
+    harry: "#111827",
+    ranger: "#f7f3de",
+    ancelotti: "#111827",
+    neymar: "#2457c5",
+    goku: "#0b5ed7",
+    meninoRoblox: "#1971c2",
+    chaves: "#2f6f9f",
+    esqueleto: "#d0d7de",
+    silvioSantos: "#111827",
+    sailor: "#2f6f9f"
+  }[hero.id] || "#1d3557";
+  const top = hero.color;
+  const y = base - (crouch ? 46 : 60);
+
+  ctx.save();
+  ctx.translate(cx, 0);
+  ctx.scale(facing < 0 ? -1 : 1, 1);
+
+  ctx.fillStyle = "rgba(0,0,0,.34)";
+  ctx.fillRect(-22, base - 4, 44, 5);
+
+  if (hero.id === "goku") {
+    ctx.fillStyle = "#111111";
+    ctx.fillRect(-13, y - 7, 6, 9);
+    ctx.fillRect(-5, y - 11, 7, 12);
+    ctx.fillRect(5, y - 7, 7, 10);
+  }
+  if (hero.id === "sailor") {
+    ctx.fillStyle = "#ffd166";
+    ctx.fillRect(-15, y - 9, 30, 5);
+    ctx.fillStyle = "#ff8ac7";
+    ctx.fillRect(-4, y - 15, 8, 8);
+  }
+
+  ctx.fillStyle = hair;
+  ctx.fillRect(-13, y, 26, 9);
+  ctx.fillStyle = skin;
+  ctx.fillRect(-12, y + 8, 24, 18);
   ctx.fillStyle = "#070a10";
-  ctx.fillRect(p.x + (p.facing > 0 ? 21 : -10), p.y + 25, 18, 5);
+  ctx.fillRect(3, y + 13, 4, 4);
+  ctx.fillRect(8, y + 22, 8, 3);
+
+  ctx.fillStyle = top;
+  if (hero.id === "ranger") {
+    ctx.fillRect(-16, y + 25, 32, 24);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(-9, y + 29, 18, 5);
+  } else if (hero.id === "sailor") {
+    ctx.fillRect(-15, y + 25, 30, 16);
+    ctx.fillStyle = "#f7f3de";
+    ctx.fillRect(-18, y + 30, 36, 5);
+    ctx.fillStyle = "#ff8ac7";
+    ctx.fillRect(-18, y + 41, 36, 10);
+  } else {
+    ctx.fillRect(-15, y + 25, 30, 24);
+  }
+
+  ctx.fillStyle = skin;
+  ctx.fillRect(-23, y + 28, 8, 20);
+  ctx.fillRect(15, y + 28, 8, 20);
+  if (hero.id === "ken" || hero.id === "ryu") {
+    ctx.fillStyle = hero.id === "ken" ? "#ffbf69" : "#d90429";
+    ctx.fillRect(16, y + 30, 12, 7);
+  }
+
+  ctx.fillStyle = pants;
+  const legStep = walk ? 3 : 0;
+  ctx.fillRect(-13, y + 49, 10, 13 + legStep);
+  ctx.fillRect(4, y + 49, 10, 13 - legStep);
+  ctx.fillStyle = "#111111";
+  ctx.fillRect(-15, y + 61 + legStep, 14, 5);
+  ctx.fillRect(3, y + 61 - legStep, 14, 5);
+
+  if (hero.id === "harry") {
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-8, y + 13, 6, 5);
+    ctx.strokeRect(3, y + 13, 6, 5);
+    ctx.fillStyle = "#ffd166";
+    ctx.fillRect(18, y + 28, 22, 4);
+  }
+  if (hero.id === "chaves") {
+    ctx.fillStyle = "#6b4b2a";
+    ctx.fillRect(-18, y - 6, 36, 7);
+  }
+  if (hero.id === "esqueleto") {
+    ctx.fillStyle = "#070a10";
+    ctx.fillRect(-7, y + 13, 4, 5);
+    ctx.fillRect(4, y + 13, 4, 5);
+    ctx.fillRect(-8, y + 34, 16, 4);
+  }
+  if (hero.id === "silvioSantos") {
+    ctx.fillStyle = "#d0d7de";
+    ctx.fillRect(18, y + 27, 8, 18);
+    ctx.fillStyle = "#111827";
+    ctx.fillRect(21, y + 23, 6, 8);
+  }
+  if (hero.id === "meninoRoblox") {
+    ctx.fillStyle = "#1d3557";
+    ctx.fillRect(17, y + 25, 12, 18);
+    ctx.fillStyle = "#74c0fc";
+    ctx.fillRect(20, y + 28, 6, 8);
+  }
+  ctx.restore();
+}
+
+function drawYoshiSprite(x, y, facing) {
+  ctx.save();
+  if (facing < 0) {
+    ctx.translate(x + 68, y);
+    ctx.scale(-1, 1);
+    x = 0;
+    y = 0;
+  }
+  ctx.fillStyle = "rgba(0,0,0,.32)";
+  ctx.fillRect(x - 6, y + 54, 66, 5);
+  ctx.fillStyle = "#36c96b";
+  ctx.fillRect(x + 5, y + 25, 34, 27);
+  ctx.fillRect(x + 25, y + 8, 30, 27);
+  ctx.fillRect(x + 51, y + 20, 12, 10);
+  ctx.fillRect(x - 2, y + 32, 12, 14);
+  ctx.fillStyle = "#f7f3de";
+  ctx.fillRect(x + 28, y + 15, 16, 16);
+  ctx.fillRect(x + 12, y + 33, 20, 15);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(x + 29, y + 2, 10, 12);
+  ctx.fillRect(x + 43, y + 2, 10, 12);
+  ctx.fillStyle = "#111";
+  ctx.fillRect(x + 34, y + 6, 3, 5);
+  ctx.fillRect(x + 48, y + 6, 3, 5);
+  ctx.fillStyle = "#ef476f";
+  ctx.fillRect(x + 5, y + 17, 13, 12);
+  ctx.fillStyle = "#f7f3de";
+  ctx.fillRect(x + 2, y + 48, 14, 8);
+  ctx.fillRect(x + 33, y + 48, 16, 8);
+  ctx.fillStyle = "#111";
+  ctx.fillRect(x + 2, y + 55, 16, 4);
+  ctx.fillRect(x + 33, y + 55, 18, 4);
+  ctx.restore();
 }
 
 function drawEnemy(e) {
