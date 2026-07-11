@@ -20,8 +20,9 @@ const ui = {
 };
 
 const heroes = [
-  { id: "joao", name: "Joao", color: "#e63946", desc: "Impacto do Reino, soco forte e pulso de area.", speed: 4.2, jump: 12, power: "pulso" },
-  { id: "luquinhas", name: "Luquinhas", color: "#457bff", desc: "Raio Azul Supremo, dash rapido e disparo eletrico.", speed: 4.7, jump: 12.4, power: "raio" },
+  { id: "ryu", name: "Ryu", color: "#f7f3de", desc: "Hadouken, foco de combate e golpe ascendente.", speed: 4.4, jump: 12.5, power: "hadouken" },
+  { id: "ken", name: "Ken", color: "#ff4d5e", desc: "Shoryuken flamejante, chute rapido e combo de fogo.", speed: 4.7, jump: 12.8, power: "shoryuken" },
+  { id: "may", name: "May", color: "#ff8ac7", desc: "Sequencia veloz, energia rosa e ataque especial giratorio.", speed: 4.8, jump: 12.7, power: "giro" },
   { id: "cr7", name: "CR7", color: "#f7f3de", desc: "Bicicleta CR7, chute SIUUU e rajada de campeao.", speed: 4.5, jump: 13.1, power: "chute" },
   { id: "yoshi", name: "Yoshi", color: "#36c96b", desc: "Chama verde, salto alto e esfera jurassica.", speed: 4.4, jump: 13.4, power: "yoshi" },
   { id: "messi", name: "Messi", color: "#74c0fc", desc: "Drible curto, Bola de Ouro e explosao de gols.", speed: 4.8, jump: 12.1, power: "bola" },
