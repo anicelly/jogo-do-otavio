@@ -20,11 +20,21 @@ const ui = {
 };
 
 const heroes = [
-  { id: "otavio", name: "Otavio Arcade", color: "#56ccff", desc: "Rajada pixel, dash, escudo e pulso turbo.", speed: 4.2, jump: 12, power: "pulso" },
-  { id: "sailor", name: "Sailor Moon", color: "#ff8ac7", desc: "Tiara lunar, cura, estrelas e explosao da lua.", speed: 4.0, jump: 12.5, power: "lua" },
-  { id: "ranger", name: "Ranger Vermelho", color: "#ff4d5e", desc: "Espada vermelha, salto heroico e raio final.", speed: 4.4, jump: 12, power: "raio" },
-  { id: "goku", name: "Goku Pixel", color: "#ff8a00", desc: "Ki blast, voo curto e Genki Dama retro.", speed: 4.6, jump: 13, power: "genki" },
-  { id: "knight", name: "Cavaleiro Rubi", color: "#ffd166", desc: "Espada, guarda real, investida e terremoto.", speed: 3.9, jump: 11.5, power: "espada" }
+  { id: "joao", name: "Joao", color: "#e63946", desc: "Impacto do Reino, soco forte e pulso de area.", speed: 4.2, jump: 12, power: "pulso" },
+  { id: "luquinhas", name: "Luquinhas", color: "#457bff", desc: "Raio Azul Supremo, dash rapido e disparo eletrico.", speed: 4.7, jump: 12.4, power: "raio" },
+  { id: "cr7", name: "CR7", color: "#f7f3de", desc: "Bicicleta CR7, chute SIUUU e rajada de campeao.", speed: 4.5, jump: 13.1, power: "chute" },
+  { id: "yoshi", name: "Yoshi", color: "#36c96b", desc: "Chama verde, salto alto e esfera jurassica.", speed: 4.4, jump: 13.4, power: "yoshi" },
+  { id: "messi", name: "Messi", color: "#74c0fc", desc: "Drible curto, Bola de Ouro e explosao de gols.", speed: 4.8, jump: 12.1, power: "bola" },
+  { id: "harry", name: "Harry Potter", color: "#8b5a2b", desc: "Expelliarmus, pomo dourado e magia de protecao.", speed: 4.1, jump: 12.7, power: "magia" },
+  { id: "ranger", name: "Power Ranger Vermelho", color: "#ff4d5e", desc: "Espada vermelha, golpe heroico e raio final.", speed: 4.4, jump: 12, power: "raio" },
+  { id: "ancelotti", name: "Carlo Ancelotti", color: "#d0d7de", desc: "Estrategia lendaria, Endrick no banco e buff tatico.", speed: 3.9, jump: 11.8, power: "tatico" },
+  { id: "neymar", name: "Neymar", color: "#ffe066", desc: "Drible, fogo, muleta power e chute amarelo.", speed: 4.9, jump: 12.5, power: "drible" },
+  { id: "goku", name: "Goku", color: "#ff8a00", desc: "Ki blast, voo curto e Genki Dama retro.", speed: 4.6, jump: 13, power: "genki" },
+  { id: "meninoRoblox", name: "Menino Roblox", color: "#e03131", desc: "Celular, placa de injustica e cubo explosivo.", speed: 4.0, jump: 12.2, power: "bloco" },
+  { id: "chaves", name: "Chaves", color: "#d8c9a7", desc: "Barril, sanduiche de presunto e suco de tamarindo.", speed: 3.8, jump: 12, power: "barril" },
+  { id: "esqueleto", name: "Esqueleto", color: "#f1f1df", desc: "Corte duplo, ossada giratoria e contra-ataque.", speed: 4.2, jump: 12.3, power: "osso" },
+  { id: "silvioSantos", name: "Silvio Santos", color: "#5dade2", desc: "Jequiti, microfone e chuva de premios.", speed: 3.9, jump: 11.9, power: "premio" },
+  { id: "sailor", name: "Sailor Moon", color: "#ff8ac7", desc: "Tiara lunar, cura, estrelas e explosao da lua.", speed: 4.0, jump: 12.5, power: "lua" }
 ];
 
 const shopItems = [
